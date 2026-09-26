@@ -1,0 +1,73 @@
+[project]
+name = "agent-canary"
+version = "0.1.0.dev0"
+description = "Detect when a coding-agent harness or model update makes it worse or pricier on your own tasks."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "Muhammad Amar Sohail" }]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+# Exact pins: this is an application, and the lockfile carries hashes.
+# Harbor is deliberately NOT a dependency; see docs/adr/0002-execution-via-harbor.md.
+dependencies = [
+    "jinja2==3.1.6",
+    "numpy==2.5.3",
+    "pydantic==2.13.5",
+    "pyyaml==6.0.3",
+    "scipy==1.18.1",
+    "typer==0.27.2",
+]
+
+[project.scripts]
+canary = "agent_canary.cli:app"
+
+[dependency-groups]
+dev = [
+    "mypy==2.3.1",
+    "pytest==9.1.1",
+    "ruff==0.16.9",
+    "types-pyyaml==6.0.12.20260906",
+]
+
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_canary"]
+
+[tool.uv]
+# Supply-chain guard: ignore anything published after this date when resolving.
+exclude-newer = "2026-09-26T00:00:00Z"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "N"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+packages = ["agent_canary"]
+
+[[tool.mypy.overrides]]
+module = ["scipy", "scipy.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers -m 'not docker'"
+markers = [
+    "docker: runs real Harbor trials in Docker (slow; needs the tools/harbor env)",
+]

@@ -1,0 +1,62 @@
+# Demo suite: three small Python tasks in Harbor's task format (tasks/<name>/task.toml).
+#
+#   canary validate -c examples/demo-suite
+#   canary compare oracle nop -c examples/demo-suite          # zero-cost plumbing check
+#   canary compare cc-baseline cc-low-effort -c examples/demo-suite   # spends API credit
+
+[suite]
+name = "demo"
+tasks_dir = "tasks"
+
+[runner]
+kind = "harbor"
+# The isolated, hash-locked Harbor environment (ADR-0002). Relative paths resolve from this file.
+harbor_command = ["uv", "run", "--project", "../../tools/harbor", "--frozen", "harbor"]
+environment = "docker"
+n_concurrent = 4
+
+[stats]
+alpha = 0.05
+alternative = "less"
+
+[budget]
+max_usd = 5.0
+max_batches = 8
+attempts_per_batch = 1
+
+# --- Zero-cost pins: Harbor's oracle applies each task's reference solution; nop does nothing.
+[pins.oracle]
+harness = "oracle"
+
+[pins.nop]
+harness = "nop"
+
+# --- Claude Code, pinned exactly. max_budget_usd caps each trial inside the harness.
+[pins.cc-baseline]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "high", max_budget_usd = "1.00" }
+
+# The next three pins inject the harness-layer regressions from Anthropic's 2026-04-23 postmortem.
+# Lower reasoning effort (postmortem: default effort lowered, Mar 4).
+[pins.cc-low-effort]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "low", max_budget_usd = "1.00" }
+
+# Verbosity instruction (postmortem: verbosity system-prompt change, Apr 16).
+[pins.cc-verbose]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "high", max_budget_usd = "1.00", append_system_prompt = "Keep every response under 25 words. Do not explain your reasoning, restate the task or summarise your changes." }
+
+# Prompt caching disabled (postmortem: thinking-block caching bug, Mar 26; an approximation).
+[pins.cc-no-cache]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "high", max_budget_usd = "1.00" }
+env = { DISABLE_PROMPT_CACHING = "1" }

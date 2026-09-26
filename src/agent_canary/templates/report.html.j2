@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canary {{ manifest.kind }} {{ manifest.run_id }}</title>
+<style>
+  :root {
+    --bg: #fbfbfa; --fg: #1d1d1b; --muted: #6b6b66; --line: #e3e2de; --card: #ffffff;
+    --bad: #b42318; --bad-bg: #fdecea; --good: #1a7f37; --good-bg: #e7f5ec;
+    --warn: #8a5a00; --warn-bg: #fff4d6; --accent: #3056d3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --fg: #ecebe7; --muted: #a09f99; --line: #2e2d2a; --card: #1d1c1a;
+      --bad: #ff8a80; --bad-bg: #3a1714; --good: #7ee2a0; --good-bg: #13301e;
+      --warn: #f5c451; --warn-bg: #3a2c0b; --accent: #8fa8ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 36px 0 12px; }
+  .muted { color: var(--muted); }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .banner { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .badge { font-weight: 650; padding: 6px 12px; border-radius: 999px; font-size: 14px; }
+  .regression { color: var(--bad); background: var(--bad-bg); }
+  .improvement { color: var(--good); background: var(--good-bg); }
+  .inconclusive { color: var(--warn); background: var(--warn-bg); }
+  .kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 20px; margin-top: 14px; }
+  .kv div span { display: block; font-size: 12px; color: var(--muted); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .pass { color: var(--good); font-weight: 600; }
+  .fail { color: var(--bad); font-weight: 600; }
+  .error { color: var(--warn); font-weight: 600; }
+  .flag { color: var(--bad); font-weight: 600; }
+  details { margin: 6px 0 10px; }
+  summary { cursor: pointer; color: var(--accent); }
+  .step { border-left: 3px solid var(--line); padding: 4px 10px; margin: 6px 0; }
+  .step.agent { border-color: var(--accent); }
+  .step pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; font-size: 12.5px; }
+  .notes li { margin: 4px 0; }
+  svg text { fill: var(--muted); font-size: 11px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>{{ manifest.suite_name }}: {{ "compare" if manifest.kind == "compare" else "run" }}
+    {% if manifest.kind == "compare" %}<span class="mono">{{ manifest.baseline }}</span> → <span class="mono">{{ manifest.candidate }}</span>{% endif %}
+  </h1>
+  <div class="muted mono">{{ manifest.run_id }} · {{ manifest.created_at.strftime("%Y-%m-%d %H:%M UTC") }}
+    · canary {{ manifest.canary_version }} · runner {{ manifest.runner.kind }}{% if manifest.runner.harbor_version %} (Harbor {{ manifest.runner.harbor_version }}){% endif %}
+    · suite commit {{ (manifest.suite_commit or "n/a")[:10] }}{% if manifest.suite_dirty %} (dirty){% endif %}</div>
+
+  {% if verdict %}
+  <h2>Verdict</h2>
+  <div class="card">
+    <div class="banner">
+      <span class="badge {{ verdict.decision }}">
+        {% if verdict.decision == "regression" %}Regression detected{% elif verdict.decision == "improvement" %}Improvement detected{% else %}Inconclusive at this budget{% endif %}
+      </span>
+      <span class="muted">stopped: {{ {"significant": "significant result", "budget_usd": "dollar budget reached", "max_batches": "batch limit reached"}[verdict.stop_reason] }}
+        after {{ verdict.batches_run }} batch{{ "es" if verdict.batches_run != 1 }}</span>
+    </div>
+    <div class="kv">
+      <div><span>E-value (threshold {{ "%g"|format(1 / verdict.alpha) }})</span>{{ "%.3g"|format(verdict.e_value) }}</div>
+      <div><span>Anytime-valid p</span>{{ "%.3g"|format(verdict.p_value) }}</div>
+      <div><span>Alternative</span>{{ {"less": "candidate worse", "greater": "candidate better", "two-sided": "either direction"}[verdict.alternative] }}</div>
+      <div><span>{{ verdict.baseline.pin }} pass rate</span>{{ verdict.baseline.passes }}/{{ verdict.baseline.n }}{% if verdict.baseline.n %} ({{ "%.0f"|format(100 * verdict.baseline.passes / verdict.baseline.n) }}%){% endif %}</div>
+      <div><span>{{ verdict.candidate.pin }} pass rate</span>{{ verdict.candidate.passes }}/{{ verdict.candidate.n }}{% if verdict.candidate.n %} ({{ "%.0f"|format(100 * verdict.candidate.passes / verdict.candidate.n) }}%){% endif %}</div>
+      <div><span>Discordant pairs (regress / improve)</span>{{ verdict.n_discordant }} ({{ verdict.n_regress }} / {{ verdict.n_improve }})</div>
+      <div><span>Pairs used / dropped</span>{{ verdict.n_pairs }} / {{ verdict.dropped_pairs }}</div>
+      <div><span>Spend (harness-reported)</span>${{ "%.2f"|format(verdict.spent_usd) }}{% if not verdict.cost_known %} <span class="error">incomplete</span>{% endif %}</div>
+    </div>
+  </div>
+
+  {% if chart %}
+  <h2>Evidence over batches</h2>
+  <div class="card scroll">
+    <svg width="{{ chart.width }}" height="{{ chart.height }}" role="img" aria-label="log10 E-value by batch">
+      <line x1="{{ chart.pad }}" x2="{{ chart.width - chart.pad }}" y1="{{ chart.threshold_y }}" y2="{{ chart.threshold_y }}" stroke="currentColor" stroke-dasharray="4 4" opacity=".55"/>
+      <text x="{{ chart.width - chart.pad }}" y="{{ chart.threshold_y - 6 }}" text-anchor="end">{{ chart.threshold_label }}</text>
+      <line x1="{{ chart.pad }}" x2="{{ chart.width - chart.pad }}" y1="{{ chart.zero_y }}" y2="{{ chart.zero_y }}" stroke="currentColor" opacity=".2"/>
+      <text x="{{ chart.pad }}" y="{{ chart.zero_y - 6 }}">E = 1</text>
+      <polyline points="{{ chart.points }}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      {% for cx, cy, b in chart.dots %}<circle cx="{{ cx }}" cy="{{ cy }}" r="3.5" fill="var(--accent)"><title>batch {{ b }}</title></circle>
+      <text x="{{ cx }}" y="{{ chart.height - 8 }}" text-anchor="middle">{{ b }}</text>{% endfor %}
+    </svg>
+    <div class="muted">log₁₀ E after each batch. Crossing the dashed line is a significant result at α = {{ verdict.alpha }}, valid despite checking after every batch (ADR-0003).</div>
+  </div>
+  {% endif %}
+
+  {% if verdict.metrics %}
+  <h2>Cost, tokens and latency</h2>
+  <div class="card scroll">
+    <table>
+      <tr><th>Metric</th><th class="num">{{ verdict.baseline.pin }}</th><th class="num">{{ verdict.candidate.pin }}</th><th class="num">Ratio</th><th class="num">{{ "%.0f"|format(100 * manifest.settings.stats.confidence) }}% CI</th><th></th></tr>
+      {% for m in verdict.metrics %}
+      <tr>
+        <td>{{ m.metric }}</td>
+        <td class="num">{{ "{:,.4g}".format(m.baseline_mean) }}</td>
+        <td class="num">{{ "{:,.4g}".format(m.candidate_mean) }}</td>
+        <td class="num">{{ "%.3f"|format(m.ratio) }}×</td>
+        <td class="num">{{ "%.3f"|format(m.ci_low) }}–{{ "%.3f"|format(m.ci_high) }}</td>
+        <td>{% if m.flagged %}<span class="flag">increase</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="muted">Means per trial; cluster bootstrap over tasks. These intervals are fixed-sample at the stopping time, not anytime-valid.</div>
+  </div>
+  {% endif %}
+
+  <h2>Per task</h2>
+  <div class="card scroll">
+    <table>
+      <tr><th>Task</th><th class="num">{{ verdict.baseline.pin }}</th><th class="num">{{ verdict.candidate.pin }}</th><th class="num">Regressed pairs</th><th class="num">Improved pairs</th></tr>
+      {% for t in verdict.per_task %}
+      <tr><td><a href="#task-{{ t.task }}">{{ t.task }}</a></td>
+        <td class="num">{{ t.baseline_passes }}/{{ t.baseline_n }}</td><td class="num">{{ t.candidate_passes }}/{{ t.candidate_n }}</td>
+        <td class="num">{% if t.n_regress %}<span class="fail">{{ t.n_regress }}</span>{% else %}0{% endif %}</td>
+        <td class="num">{% if t.n_improve %}<span class="pass">{{ t.n_improve }}</span>{% else %}0{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+    <div class="muted">Tasks with no discordant pairs add cost but no evidence; consider pruning ones that always pass or always fail.</div>
+  </div>
+  {% endif %}
+
+  <h2>Pins</h2>
+  <div class="card scroll">
+    <table>
+      <tr><th>Pin</th><th>Harness</th><th>Version</th><th>Model</th><th>Options / env</th><th>Fingerprint</th></tr>
+      {% for p in manifest.pins %}
+      <tr><td class="mono">{{ p.name }}</td><td>{{ p.spec.harness }}</td><td class="mono">{{ p.spec.version or "—" }}</td>
+        <td class="mono">{{ p.spec.model or "—" }}</td>
+        <td class="mono">{% for k, v in p.spec.options.items() %}{{ k }}={{ v }}<br>{% endfor %}{% for k, v in p.spec.env.items() %}${{ k }}={{ v }}<br>{% endfor %}</td>
+        <td class="mono">{{ p.fingerprint[:12] }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h2>Trials ({{ n_trials }})</h2>
+  {% for task, rows in by_task.items() %}
+  <div class="card scroll" id="task-{{ task }}" style="margin-bottom:14px">
+    <strong>{{ task }}</strong>
+    <table>
+      <tr><th>Batch</th><th>Pin</th><th>Status</th><th class="num">In tok</th><th class="num">Out tok</th><th class="num">Cost</th><th class="num">Agent s</th><th>Version</th><th>Files</th></tr>
+      {% for row in rows %}{% set r = row.r %}
+      <tr>
+        <td class="num">{{ r.batch }}</td><td class="mono">{{ r.pin }}</td>
+        <td class="{{ r.status.value }}">{{ r.status.value }}{% if r.exception_type %} <span class="muted">({{ r.exception_type }})</span>{% endif %}</td>
+        <td class="num">{{ "{:,}".format(r.n_input_tokens) if r.n_input_tokens is not none else "—" }}</td>
+        <td class="num">{{ "{:,}".format(r.n_output_tokens) if r.n_output_tokens is not none else "—" }}</td>
+        <td class="num">{{ "$%.3f"|format(r.reported_cost_usd) if r.reported_cost_usd is not none else "—" }}</td>
+        <td class="num">{{ "%.0f"|format(r.agent_seconds) if r.agent_seconds is not none else "—" }}</td>
+        <td class="mono">{{ r.installed_version or "—" }}</td>
+        <td>{% if row.result_link %}<a href="{{ row.result_link }}">result</a>{% endif %}
+            {% if row.agent_link %} · <a href="{{ row.agent_link }}">agent</a>{% endif %}
+            {% if row.verifier_link %} · <a href="{{ row.verifier_link }}">verifier</a>{% endif %}</td>
+      </tr>
+      {% if row.transcript or r.exception_message %}
+      <tr><td></td><td colspan="8">
+        {% if r.exception_message %}<details><summary>exception</summary><pre class="mono">{{ r.exception_message }}</pre></details>{% endif %}
+        {% if row.transcript %}
+        <details><summary>transcript ({{ row.transcript|length }} steps)</summary>
+          {% for s in row.transcript %}
+          <div class="step {{ s.source }}"><span class="muted mono">#{{ s.id }} {{ s.source }}</span>
+            {% if s.message %}<pre>{{ s.message }}</pre>{% endif %}
+            {% for c in s.calls %}<pre class="mono">→ {{ c.name }} {{ c.args }}</pre>{% endfor %}
+            {% for o in s.results %}<pre class="mono muted">← {{ o }}</pre>{% endfor %}
+          </div>
+          {% endfor %}
+        </details>
+        {% endif %}
+      </td></tr>
+      {% endif %}
+      {% endfor %}
+    </table>
+  </div>
+  {% endfor %}
+
+  <h2>Read this before acting on the numbers</h2>
+  <ul class="notes muted">
+    <li>The harness under test is the harness as launched by the runner{% if manifest.runner.harbor_version %} (Harbor {{ manifest.runner.harbor_version }}: headless print mode, permissions bypassed){% endif %}, not an interactive developer setup.</li>
+    <li>Cost is what each harness reported. Harnesses estimate cost from their own bundled price tables, so across harness versions compare tokens first (ADR-0005).</li>
+    <li>The pass-rate test controls false alarms under the null "average pass rate not lower", evaluated at batch boundaries. Dropped pairs are assumed unrelated to outcomes.</li>
+    <li>Bundle integrity: <code>canary verify {{ manifest.run_id }}</code>.</li>
+  </ul>
+</main>
+</body>
+</html>

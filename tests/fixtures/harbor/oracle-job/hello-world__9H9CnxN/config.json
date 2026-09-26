@@ -1,0 +1,8 @@
+{
+    "task": {
+        "path": "harbor/examples/tasks/hello-world"
+    },
+    "trial_name": "hello-world__9H9CnxN",
+    "trials_dir": "jobs/oracle-spike",
+    "job_id": "f75e1707-11e0-4329-a139-cb11169e0705"
+}

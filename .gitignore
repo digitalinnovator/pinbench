@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+tools/harbor/.venv/
+dist/
+build/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Canary state: run bundles, index and reports stay local
+.canary/
+jobs/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
