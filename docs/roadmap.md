@@ -8,8 +8,8 @@ The v0.1 scope comes from the project brief. Anything outside it is parked under
 |---|---|
 | Git-native suite format (Harbor task format + `canary.toml`) | Done |
 | Version-pinned pins: harness version, model, options, env, config files, with fingerprints | Done; config files are fingerprinted, but not yet delivered into the sandbox |
-| Execution through Harbor (CLI, isolated hash-locked env, one job per batch) | Done; oracle and nop verified in Docker |
-| Claude Code adapter verified end to end with tokens, cost and transcript | **Blocked on API credential** (spike 0001, step 3) |
+| Execution through Harbor (CLI, isolated hash-locked env, one job per batch) | Done; oracle/nop and Claude Code verified in Docker; harness binary cache (ADR-0006) |
+| Claude Code adapter verified end to end with tokens, cost and transcript | Done: spike 0001, 3/3 on the demo suite, plus a first real A/B comparison |
 | Codex and OpenCode pins verified end to end | Not started. Harbor has the adapters; needs a spike like 0001 for each |
 | Sequential pass-rate test (paired mixture e-process) | Done (ADR-0003) |
 | Bootstrap CIs on cost, tokens and latency | Done; cluster bootstrap over tasks |
@@ -19,7 +19,7 @@ The v0.1 scope comes from the project brief. Anything outside it is parked under
 | Cost normalisation from tokens with a pinned price table | ADR-0005 proposed; must land before any published cost number |
 | Triggers: cron and new-release detection (npm dist-tags) | Not started |
 | Alerts: Slack webhook and GitHub issue | Not started |
-| Verifier-lite "false success" scorer on ATIF transcripts | Not started. Claude Code has no numeric exit code, so the rule must parse `is_error` plus the `Exit code N` text |
+| Verifier-lite "false success" scorer on ATIF transcripts | Not started. Claude Code has no numeric exit code, and agents pipe test output (`pytest … \| tail`), so the rule must match test-runner *output* after the last edit (spike 0001) |
 | "Canary in CI" scheduled GitHub Actions example | Not started |
 | Regression-injection benchmark (detection power against runs and dollars) | Designed (injection pins in `examples/demo-suite`); needs a harder suite and a budget |
 
@@ -31,6 +31,9 @@ The v0.1 scope comes from the project brief. Anything outside it is parked under
 - **Old-build replay.** Check whether Claude Code 2.1.66–2.1.112 builds (March–April 2026) still install and behave consistently against today's API. 2.1.88 is unpublished. Packaging changed at 2.1.113.
 
 ## Known limitations to address
+
+- **Prompt-cache warmth may bias cost comparisons** between arms when one configuration ran recently (spike 0001, section 4). Test it, then add a warm-up batch or cache-aware cost accounting.
+- **Per-arm harness mounts.** The harness cache covers jobs whose Claude Code pins share a version. Comparing two versions still installs inside each sandbox (ADR-0006).
 
 - **Few tasks make the bootstrap intervals too narrow.** Percentile intervals over fewer than about 20 tasks cover less often than they claim. Consider BCa or a t-based cluster interval, and warn in the report below a task threshold.
 - **The bootstrap intervals are not anytime-valid.** A confidence-sequence replacement would allow peeking at cost as safely as at pass rate.

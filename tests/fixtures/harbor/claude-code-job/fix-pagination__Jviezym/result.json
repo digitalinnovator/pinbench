@@ -1,0 +1,136 @@
+{
+    "id": "4ace4468-f946-48d7-ae46-35ac0833163b",
+    "task_name": "agent-canary/fix-pagination",
+    "trial_name": "fix-pagination__Jviezym",
+    "trial_uri": "file:///home/user/Documents/github%20portfolio%20projects/AI%20Project%201/01-agent-canary/examples/demo-suite/.canary/runs/20260926T233112Z-run-11ff59/harbor/batch-000/fix-pagination__Jviezym",
+    "task_id": {
+        "path": "/tmp/canary-repo/examples/demo-suite/tasks/fix-pagination"
+    },
+    "source": null,
+    "task_checksum": "b595ae61541a4a74e6d3bae8602a1ed4cfbdb6e27d93a03441b77ee4714a804c",
+    "config": {
+        "task": {
+            "path": "/tmp/canary-repo/examples/demo-suite/tasks/fix-pagination",
+            "git_url": null,
+            "git_commit_id": null,
+            "name": null,
+            "ref": null,
+            "overwrite": false,
+            "download_dir": null,
+            "source": null
+        },
+        "trial_name": "fix-pagination__Jviezym",
+        "trials_dir": "/tmp/canary-repo/examples/demo-suite/.canary/runs/20260926T233112Z-run-11ff59/harbor/batch-000",
+        "install_only": false,
+        "timeout_multiplier": 1.0,
+        "agent_timeout_multiplier": null,
+        "verifier_timeout_multiplier": null,
+        "agent_setup_timeout_multiplier": 2.0,
+        "environment_build_timeout_multiplier": null,
+        "agent": {
+            "name": "claude-code",
+            "import_path": null,
+            "model_name": "anthropic/claude-opus-5",
+            "n_concurrent": null,
+            "concurrency_group": null,
+            "skills": [],
+            "override_timeout_sec": null,
+            "override_setup_timeout_sec": null,
+            "max_timeout_sec": null,
+            "resume_trajectory": false,
+            "load_trajectory": null,
+            "extra_allowed_hosts": [],
+            "kwargs": {
+                "reasoning_effort": "high",
+                "max_budget_usd": "1.00",
+                "version": "2.1.283"
+            },
+            "mcp_servers": []
+        },
+        "user_agent": null,
+        "environment": {
+            "type": "docker",
+            "import_path": null,
+            "force_build": false,
+            "delete": true,
+            "cpu_enforcement_policy": "auto",
+            "memory_enforcement_policy": "auto",
+            "override_cpus": null,
+            "override_memory_mb": null,
+            "override_storage_mb": null,
+            "override_gpus": null,
+            "override_tpu": null,
+            "mounts": [
+                {
+                    "type": "bind",
+                    "source": "/home/user/.cache/agent-canary/harness/claude-code/2.1.283/linux-x64/claude",
+                    "target": "/usr/local/bin/claude",
+                    "read_only": true
+                }
+            ],
+            "extra_docker_compose": [],
+            "kwargs": {},
+            "extra_allowed_hosts": []
+        },
+        "verifier": {
+            "override_timeout_sec": null,
+            "max_timeout_sec": null,
+            "disable": false
+        },
+        "artifacts": [],
+        "extra_instruction_paths": [],
+        "extra_instructions": [],
+        "job_id": "a2ab96a1-4e2f-4730-93ee-5915602772a0",
+        "source_trial": null
+    },
+    "agent_info": {
+        "name": "claude-code",
+        "version": "2.1.283",
+        "model_info": {
+            "name": "claude-opus-5",
+            "provider": "anthropic"
+        }
+    },
+    "agent_result": {
+        "n_input_tokens": 65294,
+        "n_cache_tokens": 58605,
+        "n_output_tokens": 709,
+        "cost_usd": 0.08882375,
+        "model_usage": {
+            "claude-opus-5": {
+                "n_input_tokens": 65294,
+                "n_cache_tokens": 58605,
+                "n_output_tokens": 709,
+                "cost_usd": 0.08882374999999999
+            }
+        },
+        "rollout_details": null,
+        "metadata": null
+    },
+    "verifier_result": {
+        "rewards": {
+            "reward": 1.0
+        }
+    },
+    "verifier_environment_mode": "shared",
+    "exception_info": null,
+    "started_at": "2026-09-26T23:31:17.120478Z",
+    "finished_at": "2026-09-26T23:32:34.502473Z",
+    "environment_setup": {
+        "started_at": "2026-09-26T23:31:17.351372Z",
+        "finished_at": "2026-09-26T23:31:34.327363Z"
+    },
+    "agent_setup": {
+        "started_at": "2026-09-26T23:31:34.327728Z",
+        "finished_at": "2026-09-26T23:31:35.529859Z"
+    },
+    "agent_execution": {
+        "started_at": "2026-09-26T23:31:35.530298Z",
+        "finished_at": "2026-09-26T23:31:56.064056Z"
+    },
+    "verifier": {
+        "started_at": "2026-09-26T23:32:07.043826Z",
+        "finished_at": "2026-09-26T23:32:18.229859Z"
+    },
+    "step_results": null
+}

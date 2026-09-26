@@ -13,6 +13,8 @@ The canary compares dollars per task across harness versions. None of the three 
 
 So a harness upgrade that only changes the bundled price table would appear as a cost regression, or hide one. Replaying March–April 2026 Claude Code builds would report cost at those builds' prices. Token counts are what the harness actually consumed, and they are comparable across versions.
 
+Spike 0001 adds a second reason. Server-side prompt caching makes a trial's cost depend on whether the same configuration ran recently: a cold arm pays cache writes and a warm arm pays cheap cache reads. Cost normalisation therefore needs to report cache reads and writes separately, and possibly discard a warm-up batch.
+
 ## Decision (proposed)
 
 - Record each harness's reported cost as `reported_cost_usd`. It is kept, but it is not the comparison metric.

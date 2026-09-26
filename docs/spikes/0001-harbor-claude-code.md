@@ -2,7 +2,7 @@
 
 - Date: 2026-09-27
 - Goal (brief, step 3): run one task through Harbor with Claude Code at a pinned version, and capture tokens, cost and transcript.
-- Outcome: **partial.** Harbor is proven as the execution layer, through the canary, in Docker. The Claude Code trial is prepared but has not run, because no API credential was available in this environment.
+- Outcome: **done.** Claude Code 2.1.283 on `claude-opus-5` ran through Harbor and the canary, with tokens, cost and transcript captured (section 3). It took three failed attempts first; each one found a real problem (section 3a). Total API spend: $1.30.
 
 ## 1. Harbor, installed and run (done)
 
@@ -63,30 +63,45 @@ Fix: [ADR-0006](../adr/0006-harness-binary-cache.md). Download each pinned binar
 
 So this was a credential problem, and cost was $0. Harbor still ran the verifier and wrote reward 0, so the canary counted these as *failures*. That would bias a comparison against whichever arm hits API trouble. Harbor's API, auth, setup and verifier-plumbing exceptions now make a trial `error`, which is excluded from pairing (`INFRASTRUCTURE_EXCEPTIONS` in `runners/harbor.py`). Agent timeouts, context overflows, refusals and crashes still count as failures.
 
-## 3. Claude Code at a pinned version
+## 3. Claude Code at a pinned version (done)
 
-Prepared:
+Run `20260926T233112Z-run-11ff59`: `canary run cc-baseline -c examples/demo-suite --env-file .env`, with the harness cache mounted and a workspace-scoped key. Result: **3/3 passed, 89 s wall time, $0.31.**
 
-- Pin `cc-baseline` in `examples/demo-suite/canary.toml`: `claude-code` `2.1.283`, `anthropic/claude-opus-5`, `reasoning_effort = "high"`, `max_budget_usd = "1.00"` per trial.
-- Harbor's adapter installs that exact version (native bootstrap installer on Debian-based images, npm on Alpine). It runs `claude --print --output-format=stream-json --verbose` with `bypassPermissions`, and reads:
-  - tokens from the session JSONL
-  - cost from the stream's `total_cost_usd`, falling back to a LiteLLM estimate
-  - the version from the session JSONL
-- The canary fails the run if the installed version differs from the pin.
+| Task | Input tokens (cache reads) | Output tokens | Reported cost | Agent time |
+|---|---|---|---|---|
+| fix-pagination | 65,294 (58,605) | 709 | $0.089 | 21 s |
+| parse-duration | 83,543 (76,080) | 1,199 | $0.115 | 32 s |
+| slugify | 67,534 (62,131) | 1,698 | $0.107 | 33 s |
 
-To run it, with a key in a gitignored `.env` at the repo root (`ANTHROPIC_API_KEY=...` or `CLAUDE_CODE_OAUTH_TOKEN=...`):
+Checklist:
 
-```bash
-uv run canary run cc-baseline -c examples/demo-suite --env-file .env
-```
+- [x] **Version.** The installed version is 2.1.283, proven by the ATIF trajectory (`version_source = trajectory`).
+- [x] **Tokens and cost.** Both are populated. Cost matches tokens × Opus 5 list prices, within the uncertainty of cache writes versus plain input. fix-pagination: 58,605 cache reads × $0.50/M + about 6.7k fresh or cache-write input × $5–6.25/M + 709 output × $25/M comes to $0.080–0.089, against $0.0888 reported.
+- [x] **Transcript.** `agent/trajectory.json` (ATIF-v1.7) exists and renders in the report's transcript view.
+- [x] **Bash exit status in ATIF.** Each Bash result carries `extra.tool_result_metadata.tool_use_result` with `stdout`, `stderr` and `interrupted`, plus `raw_tool_result.is_error`. **There is no numeric exit code.** Worse for naive checks, the agent ran its tests as `python -m pytest -q test_durations.py 2>&1 | tail -3`, so the shell status is `tail`'s, not pytest's. **Design input for verifier-lite:** a "tests pass" claim must be matched against *test-runner output* (`N passed`, `failed`, `error`) in a test-runner call after the last `Write` or `Edit`. Exit codes are not enough even where harnesses report them.
+- [x] **Timing.** Agent time 20–33 s per trial. With the cached harness, environment setup and install is seconds. The batch took 85 s.
 
-The first thing to record from that run:
+A real trial is now a contract-test fixture (`tests/fixtures/harbor/claude-code-job/`, paths sanitised, no credentials).
 
-- [ ] Installed version equals 2.1.283.
-- [ ] `n_input_tokens`, `n_cache_tokens`, `n_output_tokens` and `cost_usd` are populated, and cost roughly matches the tokens × the current price list.
-- [ ] `agent/trajectory.json` exists and renders in the report's transcript view.
-- [ ] How Bash exit status appears in the ATIF observation. It matters for the verifier-lite rule, because Claude Code has no numeric exit code.
-- [ ] Wall time per trial and install overhead. Harbor installs the CLI in every trial's sandbox.
+## 4. First real comparison: `cc-baseline` vs `cc-low-effort` (done)
+
+Run `20260926T233333Z-compare-b16d31`, 2 batches × 3 tasks × 2 arms, $0.99:
+
+| Metric | low-effort / baseline | 95% CI (cluster bootstrap, 3 tasks) |
+|---|---|---|
+| Pass rate | 6/6 vs 6/6, 0 discordant pairs, E = 1 | Inconclusive, as expected: the demo tasks are too easy |
+| Output tokens | ×0.36 | 0.34–0.38 |
+| Input tokens | ×0.65 | 0.48–0.77 |
+| Agent time | ×0.55 | 0.46–0.74 |
+| Reported cost | ×0.89 | 0.61–1.43 |
+
+**Observation (a hypothesis, not a finding):** cost moved much less than tokens. In batch 0 the low-effort trials cost $0.08–0.14; in batch 1, $0.03–0.06. The baseline arm was cheap in both batches, and the spike had run the baseline configuration two minutes earlier. This is consistent with **server-side prompt-cache warmth carrying over between runs**, which would bias cost comparisons toward whichever arm ran recently. Mitigations to evaluate:
+
+- a discarded warm-up batch per arm;
+- reporting cache reads and writes separately;
+- re-pricing from tokens (ADR-0005).
+
+Test it before trusting any cost ratio.
 
 ## Result
 

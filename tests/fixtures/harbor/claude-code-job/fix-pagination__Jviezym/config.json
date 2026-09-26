@@ -1,0 +1,29 @@
+{
+    "task": {
+        "path": "/tmp/canary-repo/examples/demo-suite/tasks/fix-pagination"
+    },
+    "trial_name": "fix-pagination__Jviezym",
+    "trials_dir": "/tmp/canary-repo/examples/demo-suite/.canary/runs/20260926T233112Z-run-11ff59/harbor/batch-000",
+    "agent_setup_timeout_multiplier": 2.0,
+    "agent": {
+        "name": "claude-code",
+        "model_name": "anthropic/claude-opus-5",
+        "kwargs": {
+            "reasoning_effort": "high",
+            "max_budget_usd": "1.00",
+            "version": "2.1.283"
+        }
+    },
+    "environment": {
+        "type": "docker",
+        "mounts": [
+            {
+                "type": "bind",
+                "source": "/home/user/.cache/agent-canary/harness/claude-code/2.1.283/linux-x64/claude",
+                "target": "/usr/local/bin/claude",
+                "read_only": true
+            }
+        ]
+    },
+    "job_id": "a2ab96a1-4e2f-4730-93ee-5915602772a0"
+}

@@ -263,3 +263,33 @@ def test_api_failures_are_errors_but_agent_failures_count(
     )
     record = parse_trial(_load(path), pin="p", batch=0, pass_threshold=1.0, trial_dir=None)
     assert record.status is expected
+
+
+CLAUDE_JOB = FIXTURES / "harbor" / "claude-code-job"
+
+
+def test_real_claude_code_trial(tmp_path: Path) -> None:
+    """Claude Code 2.1.283 on claude-opus-5 through Harbor 0.23.0 (spike 0001, 2026-09-27)."""
+    bundle = tmp_path / "bundle"
+    job = bundle / "harbor" / "batch-000"
+    shutil.copytree(CLAUDE_JOB, job)
+    pin = PinSpec(
+        harness="claude-code",
+        version="2.1.283",
+        model="anthropic/claude-opus-5",
+        options={"reasoning_effort": "high", "max_budget_usd": "1.00"},
+    )
+    (record,) = collect_trials(
+        job, bundle, pin_identities({"cc": pin}), batch=0, pass_threshold=1.0
+    )
+    assert record.pin == "cc"
+    assert record.task == "fix-pagination"
+    assert record.status is TrialStatus.PASS
+    assert (record.installed_version, record.version_source) == ("2.1.283", "trajectory")
+    assert (record.n_input_tokens, record.n_cache_tokens, record.n_output_tokens) == (
+        65_294,
+        58_605,
+        709,
+    )
+    assert record.reported_cost_usd == pytest.approx(0.08882375)
+    assert record.agent_seconds == pytest.approx(20.53, abs=0.01)

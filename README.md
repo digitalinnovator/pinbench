@@ -4,7 +4,7 @@
 
 Agent Canary re-runs your own task suite against pinned versions of a coding-agent harness and model. It stops as soon as a regression in pass rate is statistically clear, and reports cost, token and latency changes with confidence intervals. It composes [Harbor](https://github.com/harbor-framework/harbor) for sandboxed execution and adds the missing layer on top: version pinning, sequential statistics, budgets and immutable evidence.
 
-> **Status: pre-alpha, local development only.** The vertical slice works end to end: suite → paired runs → statistics → sealed bundle → index → report. No benchmark numbers are published yet. See the [roadmap](docs/roadmap.md).
+> **Status: pre-alpha, local development only.** The vertical slice works end to end: suite → paired runs → statistics → sealed bundle → index → report. It has been verified against real Harbor sandboxes with Claude Code 2.1.283 ([spike 0001](docs/spikes/0001-harbor-claude-code.md)). No benchmark numbers are published yet. See the [roadmap](docs/roadmap.md).
 
 <!-- Demo GIF goes here once the Claude Code spike has run (docs/spikes/0001-harbor-claude-code.md). -->
 
