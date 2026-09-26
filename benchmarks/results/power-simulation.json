@@ -1,0 +1,353 @@
+{
+  "args": {
+    "sims": 2000,
+    "seed": 20260927,
+    "alpha": 0.05,
+    "p0": 0.6,
+    "spread": 1.5,
+    "max_batches": 20,
+    "cost_per_trial": 0.5,
+    "tasks": [
+      10,
+      25,
+      50
+    ],
+    "drops": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+    ],
+    "mixture_max": [
+      1.0,
+      0.8,
+      0.7
+    ]
+  },
+  "outcomes": [
+    {
+      "n_tasks": 10,
+      "drop": 0.0,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.0165,
+          "median_batches": 7.0,
+          "mean_trials": 396.13
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.0165,
+          "median_batches": 11.0,
+          "mean_trials": 396.95
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.0105,
+          "median_batches": 16.0,
+          "mean_trials": 398.96999999999997
+        }
+      ],
+      "fixed_detect_rate": 0.0355,
+      "peek_detect_rate": 0.142,
+      "discordance": 0.3473478062083401
+    },
+    {
+      "n_tasks": 10,
+      "drop": 0.05,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.1045,
+          "median_batches": 10.0,
+          "mean_trials": 379.41
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.1235,
+          "median_batches": 11.0,
+          "mean_trials": 378.77000000000004
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.1095,
+          "median_batches": 14.0,
+          "mean_trials": 386.22999999999996
+        }
+      ],
+      "fixed_detect_rate": 0.2965,
+      "peek_detect_rate": 0.4685,
+      "discordance": 0.3534137649266354
+    },
+    {
+      "n_tasks": 10,
+      "drop": 0.1,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.433,
+          "median_batches": 11.0,
+          "mean_trials": 319.66
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.469,
+          "median_batches": 11.0,
+          "mean_trials": 317.63
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.467,
+          "median_batches": 13.0,
+          "mean_trials": 334.25
+        }
+      ],
+      "fixed_detect_rate": 0.7285,
+      "peek_detect_rate": 0.833,
+      "discordance": 0.36086260120348707
+    },
+    {
+      "n_tasks": 10,
+      "drop": 0.2,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.977,
+          "median_batches": 6.0,
+          "mean_trials": 150.0
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.9865,
+          "median_batches": 7.0,
+          "mean_trials": 152.20000000000002
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.988,
+          "median_batches": 8.0,
+          "mean_trials": 179.20999999999998
+        }
+      ],
+      "fixed_detect_rate": 0.9975,
+      "peek_detect_rate": 0.9985,
+      "discordance": 0.3853274108316702
+    },
+    {
+      "n_tasks": 25,
+      "drop": 0.0,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.0215,
+          "median_batches": 3.0,
+          "mean_trials": 984.45
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.021,
+          "median_batches": 5.0,
+          "mean_trials": 987.25
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.0245,
+          "median_batches": 8.0,
+          "mean_trials": 987.7
+        }
+      ],
+      "fixed_detect_rate": 0.0475,
+      "peek_detect_rate": 0.1705,
+      "discordance": 0.3473405251351242
+    },
+    {
+      "n_tasks": 25,
+      "drop": 0.05,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.225,
+          "median_batches": 10.0,
+          "mean_trials": 889.025
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.2735,
+          "median_batches": 11.0,
+          "mean_trials": 871.5999999999999
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.3095,
+          "median_batches": 11.0,
+          "mean_trials": 870.1
+        }
+      ],
+      "fixed_detect_rate": 0.58,
+      "peek_detect_rate": 0.737,
+      "discordance": 0.35330771519646426
+    },
+    {
+      "n_tasks": 25,
+      "drop": 0.1,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.812,
+          "median_batches": 9.0,
+          "mean_trials": 571.625
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.8605,
+          "median_batches": 8.0,
+          "mean_trials": 531.8
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.8835,
+          "median_batches": 8.0,
+          "mean_trials": 532.275
+        }
+      ],
+      "fixed_detect_rate": 0.9735,
+      "peek_detect_rate": 0.984,
+      "discordance": 0.36206916389629057
+    },
+    {
+      "n_tasks": 25,
+      "drop": 0.2,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 1.0,
+          "median_batches": 3.0,
+          "mean_trials": 177.55
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 1.0,
+          "median_batches": 3.0,
+          "mean_trials": 175.8
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 1.0,
+          "median_batches": 4.0,
+          "mean_trials": 201.175
+        }
+      ],
+      "fixed_detect_rate": 1.0,
+      "peek_detect_rate": 1.0,
+      "discordance": 0.38572812020947383
+    },
+    {
+      "n_tasks": 50,
+      "drop": 0.0,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.01,
+          "median_batches": 3.5,
+          "mean_trials": 1985.9
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.0135,
+          "median_batches": 4.0,
+          "mean_trials": 1981.1499999999999
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.014,
+          "median_batches": 5.0,
+          "mean_trials": 1981.25
+        }
+      ],
+      "fixed_detect_rate": 0.0485,
+      "peek_detect_rate": 0.1875,
+      "discordance": 0.34791504328857276
+    },
+    {
+      "n_tasks": 50,
+      "drop": 0.05,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.4285,
+          "median_batches": 12.0,
+          "mean_trials": 1623.05
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.4925,
+          "median_batches": 11.0,
+          "mean_trials": 1539.7
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.546,
+          "median_batches": 10.0,
+          "mean_trials": 1486.85
+        }
+      ],
+      "fixed_detect_rate": 0.8365,
+      "peek_detect_rate": 0.903,
+      "discordance": 0.352954848456158
+    },
+    {
+      "n_tasks": 50,
+      "drop": 0.1,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 0.9885,
+          "median_batches": 6.0,
+          "mean_trials": 691.5
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 0.993,
+          "median_batches": 5.0,
+          "mean_trials": 624.85
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 0.9945,
+          "median_batches": 5.0,
+          "mean_trials": 605.8
+        }
+      ],
+      "fixed_detect_rate": 1.0,
+      "peek_detect_rate": 1.0,
+      "discordance": 0.3612086068209475
+    },
+    {
+      "n_tasks": 50,
+      "drop": 0.2,
+      "eproc": [
+        {
+          "q_max": 1.0,
+          "detect_rate": 1.0,
+          "median_batches": 2.0,
+          "mean_trials": 209.20000000000002
+        },
+        {
+          "q_max": 0.8,
+          "detect_rate": 1.0,
+          "median_batches": 2.0,
+          "mean_trials": 202.1
+        },
+        {
+          "q_max": 0.7,
+          "detect_rate": 1.0,
+          "median_batches": 2.0,
+          "mean_trials": 230.29999999999998
+        }
+      ],
+      "fixed_detect_rate": 1.0,
+      "peek_detect_rate": 1.0,
+      "discordance": 0.3856307179117705
+    }
+  ]
+}

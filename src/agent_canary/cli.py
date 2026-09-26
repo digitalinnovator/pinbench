@@ -103,9 +103,10 @@ def validate(config: ConfigOpt = Path("canary.toml")) -> None:
             f"fp={pin.fingerprint(loaded.root)[:12]}"
         )
     per_batch = len(suite.tasks) * cfg.budget.attempts_per_batch
+    min_pairs = min_discordant_to_detect(cfg.stats.alpha, cfg.stats.mixture_max)
     typer.echo(
         f"compare  alpha={cfg.stats.alpha} ({cfg.stats.alternative}); needs >= "
-        f"{min_discordant_to_detect(cfg.stats.alpha)} discordant pairs to flag; "
+        f"{min_pairs} discordant pairs to flag; "
         f"{per_batch} pairs/batch, <= {cfg.budget.max_batches} batches, <= ${cfg.budget.max_usd:g}"
     )
     typer.echo(f"runner   {cfg.runner.kind}")

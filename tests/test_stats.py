@@ -31,6 +31,20 @@ def test_closed_form_matches_numerical_integral(n: int, k: int) -> None:
     assert log_e_one_sided(n, k) == pytest.approx(expected, rel=1e-9, abs=1e-12)
 
 
+@pytest.mark.parametrize(
+    ("n", "k", "q_max"), [(5, 3, 0.8), (20, 14, 0.7), (40, 25, 0.75), (8, 8, 0.6)]
+)
+def test_truncated_mixture_matches_numerical_integral(n: int, k: int, q_max: float) -> None:
+    integral, _ = quad(lambda q: q**k * (1 - q) ** (n - k), 0.5, q_max)
+    expected = math.log(2**n * integral / (q_max - 0.5))
+    assert log_e_one_sided(n, k, q_max) == pytest.approx(expected, rel=1e-9, abs=1e-12)
+
+
+def test_invalid_mixture_bound_rejected() -> None:
+    with pytest.raises(ValueError, match="q_max"):
+        log_e_one_sided(3, 1, 0.5)
+
+
 def test_seven_straight_regressions_needed_at_alpha_005() -> None:
     assert min_discordant_to_detect(0.05) == 7
     assert e_value(6, 0, "less") < 20 <= e_value(7, 0, "less")
@@ -60,7 +74,14 @@ def test_invalid_counts_rejected() -> None:
 
 
 def _simulate_rejections(
-    a: np.ndarray, b: np.ndarray, *, n_sims: int, n_batches: int, alpha: float, seed: int
+    a: np.ndarray,
+    b: np.ndarray,
+    *,
+    n_sims: int,
+    n_batches: int,
+    alpha: float,
+    seed: int,
+    q_max: float = 1.0,
 ) -> float:
     """Fraction of simulated compare runs that ever cross 1/alpha at a batch boundary."""
     rng = np.random.default_rng(seed)
@@ -75,7 +96,7 @@ def _simulate_rejections(
         for t in range(n_batches):
             key = (int(regress[s, t] + improve[s, t]), int(regress[s, t]))
             if key not in cache:
-                cache[key] = log_e_one_sided(*key) >= threshold
+                cache[key] = log_e_one_sided(*key, q_max) >= threshold
             if cache[key]:
                 rejected[s] = True
                 break
@@ -88,12 +109,13 @@ def test_false_alarm_rate_under_identical_arms() -> None:
     assert rate <= 0.05 + 0.012  # alpha plus ~3 Monte Carlo standard errors
 
 
-def test_false_alarm_rate_under_heterogeneous_null() -> None:
+@pytest.mark.parametrize("q_max", [1.0, 0.75])
+def test_false_alarm_rate_under_heterogeneous_null(q_max: float) -> None:
     """Candidate better on some tasks, worse on others, equal on average (ADR-0003)."""
     a = np.array([0.9, 0.2, 0.8, 0.3, 0.6, 0.5])
     b = np.array([0.2, 0.9, 0.3, 0.8, 0.5, 0.6])
     assert a.mean() == pytest.approx(b.mean())
-    rate = _simulate_rejections(a, b, n_sims=3000, n_batches=40, alpha=0.05, seed=2)
+    rate = _simulate_rejections(a, b, n_sims=3000, n_batches=40, alpha=0.05, seed=2, q_max=q_max)
     assert rate <= 0.05 + 0.012
 
 

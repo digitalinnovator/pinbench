@@ -14,7 +14,7 @@ Anthropic's [2026-04-23 postmortem](https://www.anthropic.com/engineering/april-
 
 ## Headline benchmark
 
-*Not yet published.* The planned regression-injection benchmark injects the three postmortem failure types into a pinned Claude Code (`examples/demo-suite/canary.toml` has the injection pins). It then reports how many runs and dollars it takes to flag each regression at 95% confidence. Every number here will come from a committed benchmark script.
+*Not yet published.* A [power simulation](benchmarks/results/power-simulation.md) (simulated, not measured) sizes it. The planned regression-injection benchmark injects the three postmortem failure types into a pinned Claude Code (`examples/demo-suite/canary.toml` has the injection pins). It then reports how many runs and dollars it takes to flag each regression at 95% confidence. Every number here will come from a committed benchmark script.
 
 ## Quickstart
 
@@ -59,7 +59,7 @@ flowchart LR
 
 - **Pins are cells of a version matrix.** A pin is harness × exact version × model × options × env × config files, identified by a fingerprint. Compare two pins that differ in one dimension and a regression is attributed to that dimension.
 - **Paired and concurrent.** Each batch runs every task on both pins in the same Harbor job. Pairing removes task-difficulty variance. Running both arms together controls for API drift during the day.
-- **Stops early, safely.** The pass-rate test is a mixture e-process on discordant pairs. Checking it after every batch does not inflate the false-alarm rate ([ADR-0003](docs/adr/0003-sequential-paired-statistics.md)). With α = 0.05 it needs at least 7 discordant pairs to flag anything.
+- **Stops early, safely.** The pass-rate test is a mixture e-process on discordant pairs. Checking it after every batch does not inflate the false-alarm rate ([ADR-0003](docs/adr/0003-sequential-paired-statistics.md)). With the defaults (α = 0.05, mixture bound 0.8) it needs at least 10 discordant pairs to flag anything. The mixture bound was chosen by a [power simulation](benchmarks/results/power-simulation.md), which also shows that re-checking a fixed-sample test after every batch gives 14–19% false alarms instead of 5%.
 - **Evidence you can audit.** Every run is a bundle holding the manifest (task digests, pin fingerprints, Harbor version, settings), raw Harbor trial directories, normalised trials and the verdict. The bundle is checksummed and made read-only ([ADR-0004](docs/adr/0004-run-bundles-and-index.md)).
 
 Architecture: [C4 context](docs/architecture/c4-context.md) · [C4 containers and data model](docs/architecture/c4-container.md) · [ADRs](docs/adr/).

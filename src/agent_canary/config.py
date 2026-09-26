@@ -105,6 +105,13 @@ class StatsConfig(_Strict):
         default="less",
         description="'less': alarm when the candidate is worse (regression).",
     )
+    mixture_max: Annotated[float, Field(gt=0.5, le=1.0)] = Field(
+        default=0.8,  # chosen by benchmarks/power_simulation.py; see ADR-0003
+        description=(
+            "Upper end of the e-process's uniform mixture over q = P(regress | discordant). "
+            "Lower values favour small regressions; any value keeps the false-alarm guarantee."
+        ),
+    )
     pass_threshold: float = Field(default=1.0, description="reward >= threshold counts as pass.")
     bootstrap_resamples: Annotated[int, Field(ge=100)] = 2000
     confidence: Annotated[float, Field(gt=0, lt=1)] = 0.95

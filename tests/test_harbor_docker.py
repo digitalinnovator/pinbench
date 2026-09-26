@@ -51,15 +51,15 @@ def demo_project(tmp_path: Path) -> Any:
 def test_oracle_vs_nop_is_flagged_through_real_harbor(demo_project: Path) -> None:
     loaded = load_config(demo_project)
     runner = HarborRunner(loaded.config.runner, cwd=loaded.root, pass_threshold=1.0)
-    outcome = run_compare(loaded, load_suite(loaded), runner, "oracle", "nop", max_batches=4)
+    outcome = run_compare(loaded, load_suite(loaded), runner, "oracle", "nop", max_batches=5)
     verdict = outcome.verdict
     assert verdict is not None
 
-    # 3 tasks per batch, every pair discordant: E crosses 20 after 7 discordant pairs (batch 3).
+    # 3 tasks per batch, all pairs discordant; with q_max = 0.8, E crosses 20 at 10 pairs (batch 4).
     assert verdict.decision == "regression"
-    assert verdict.batches_run == 3
-    assert (verdict.baseline.passes, verdict.baseline.n) == (9, 9)
-    assert (verdict.candidate.passes, verdict.candidate.n) == (0, 9)
+    assert verdict.batches_run == 4
+    assert (verdict.baseline.passes, verdict.baseline.n) == (12, 12)
+    assert (verdict.candidate.passes, verdict.candidate.n) == (0, 12)
     assert verdict.dropped_pairs == 0
 
     manifest = outcome.bundle.manifest()

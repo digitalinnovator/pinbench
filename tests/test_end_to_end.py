@@ -39,7 +39,7 @@ def test_validate(simulated_project: Path) -> None:
     result = _invoke("validate", "-c", str(simulated_project))
     assert result.exit_code == 0
     assert "6 tasks" in result.output
-    assert "needs >= 7 discordant pairs" in result.output
+    assert "needs >= 10 discordant pairs" in result.output
 
 
 def test_compare_detects_regression_and_writes_everything(simulated_project: Path) -> None:

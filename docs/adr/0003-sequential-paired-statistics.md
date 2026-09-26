@@ -59,6 +59,28 @@ The canary stops at the first batch boundary where any of these holds:
 
 For each metric (cost in USD, input tokens, output tokens, agent wall time), the canary reports `mean(candidate) / mean(baseline)` with a percentile confidence interval. The interval comes from a **cluster bootstrap over tasks**: resample task IDs with replacement, and keep all trials of a resampled task in both arms. The canary flags a cost regression when the lower bound exceeds 1.0 and the point estimate exceeds `1 + threshold` (default 10%). It uses a fixed seed, recorded in the run bundle, so reports can be reproduced exactly.
 
+### Amendment (2026-09-27): mixture bound q_max = 0.8
+
+The first version mixed uniformly over `q ∈ [½, 1]`. The [power simulation](../../benchmarks/results/power-simulation.md) shows that this spreads evidence across implausibly large effects. A 10-point pass-rate drop at typical discordance is `q ≈ 0.64`. The mixture is now uniform over `[½, q_max]` with `q_max = 0.8` by default (`[stats] mixture_max`):
+
+```
+E_n = 2^n / (q_max - ½) · ∫_{½}^{q_max} q^k (1-q)^(n-k) dq
+```
+
+Any `q_max > ½` keeps the false-alarm guarantee, because every component of the mixture is a supermartingale under the null. What moves is power. Simulated results (2,000 runs per cell, 20-batch budget):
+
+| Tasks | Drop | Detected, q ≤ 1 | Detected, q ≤ 0.8 | Mean spend, q ≤ 1 → 0.8 |
+|---|---|---|---|---|
+| 25 | 5 pts | 22.5% | 27.4% | $445 → $436 |
+| 25 | 10 pts | 81.2% | 86.1% | $286 → $266 |
+| 50 | 5 pts | 42.9% | 49.2% | $812 → $770 |
+| 50 | 20 pts | 100%, median 2 batches | 100%, median 2 batches | $105 → $101 |
+
+The price is a higher floor. At least 10 discordant pairs are needed to raise an alarm, up from 7. The same simulation measured two things that motivate this ADR:
+
+- **Re-checking an exact McNemar test after every batch gives 14–19% false alarms** at a nominal 5%.
+- **A single fixed-N McNemar test at the full budget has more power** (97% against 86% at 25 tasks, 10 points), but it always spends the whole budget.
+
 ## Consequences
 
 - The false-alarm rate is controlled even though the canary checks after every batch. This is the property that lets it stop early and save money.

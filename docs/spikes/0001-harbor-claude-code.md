@@ -72,6 +72,6 @@ Oracle vs nop through real Harbor: `canary compare oracle nop -c examples/demo-s
 - **Correctness:** every E value matches the closed form in ADR-0003, for example 2⁴/4 · (1 − 2⁻⁴) = 3.75.
 - **Bundle:** `canary verify` reports it intact, and the run appears in `canary runs`.
 
-This is the same scenario as the `docker`-marked integration test in CI (`tests/test_harbor_docker.py`).
+This run used the original mixture bound, q ≤ 1. The bundle's manifest records the settings. With the current default, q ≤ 0.8 (ADR-0003 amendment), the same scenario needs 10 discordant pairs, which is 4 batches. That is what the `docker`-marked integration test in CI (`tests/test_harbor_docker.py`) now asserts.
 
 An earlier identical run reached the same verdict. Its bundle was lost because `make clean` was run while the job was still writing. Do not run `make clean` during a run.

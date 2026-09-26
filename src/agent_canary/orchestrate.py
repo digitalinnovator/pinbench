@@ -205,7 +205,7 @@ def run_compare(
     )
 
     records: list[TrialRecord] = []
-    state = SequentialState()
+    state = SequentialState(q_max=cfg.stats.mixture_max)
     history: list[BatchPoint] = []
     stop_reason: str | None = None
     warned_unknown_cost = False

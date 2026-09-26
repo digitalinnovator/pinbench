@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
-from scipy.special import betainc, betaln
+from scipy.special import betaincc, betaln
 
 from agent_canary.models import RatioEstimate, TrialRecord, TrialStatus
 
@@ -85,32 +85,39 @@ def build_pairs(
 # --------------------------------------------------------------------------------------------
 
 
-def log_e_one_sided(n: int, k: int) -> float:
+def log_e_one_sided(n: int, k: int, q_max: float = 1.0) -> float:
     """log E for "q > 1/2" after k successes in n discordant pairs.
 
-    E_n = 2^(n+1) * integral_{1/2}^{1} q^k (1-q)^(n-k) dq
-        = 2^(n+1) * B(k+1, n-k+1) * I_{1/2}(n-k+1, k+1)
+    Uniform mixture over q in [1/2, q_max]:
 
-    Uniform mixture over q in [1/2, 1]. A non-negative supermartingale under q <= 1/2 when
-    sampled at full-sweep batch boundaries (ADR-0003), so P(sup E >= 1/alpha) <= alpha.
+    E_n = 2^n / (q_max - 1/2) * integral_{1/2}^{q_max} q^k (1-q)^(n-k) dq
+        = 2^n / (q_max - 1/2) * B(k+1, n-k+1) * [Ic_{1/2} - Ic_{q_max}](k+1, n-k+1)
+
+    where Ic is the complemented regularised incomplete beta function (upper tails, which avoids
+    cancellation). Any mixture over q > 1/2 is a non-negative supermartingale under q <= 1/2 at
+    full-sweep batch boundaries (ADR-0003), so P(sup E >= 1/alpha) <= alpha for every q_max.
+    q_max only moves power between small and large effects.
     """
     if not 0 <= k <= n:
         raise ValueError(f"need 0 <= k <= n, got k={k}, n={n}")
-    tail = float(betainc(n - k + 1, k + 1, 0.5))
+    if not 0.5 < q_max <= 1.0:
+        raise ValueError(f"q_max must be in (0.5, 1], got {q_max}")
+    a, b = k + 1, n - k + 1
+    tail = float(betaincc(a, b, 0.5)) - (float(betaincc(a, b, q_max)) if q_max < 1.0 else 0.0)
     if tail <= 0.0:
         return -math.inf
-    return (n + 1) * _LN2 + float(betaln(k + 1, n - k + 1)) + math.log(tail)
+    return n * _LN2 - math.log(q_max - 0.5) + float(betaln(a, b)) + math.log(tail)
 
 
 def _exp(x: float) -> float:
     return math.exp(min(x, _MAX_LOG_E))
 
 
-def e_value(n_regress: int, n_improve: int, alternative: Alternative) -> float:
+def e_value(n_regress: int, n_improve: int, alternative: Alternative, q_max: float = 1.0) -> float:
     """E-value for the chosen alternative from cumulative discordant-pair counts."""
     n = n_regress + n_improve
-    e_less = _exp(log_e_one_sided(n, n_regress))  # candidate worse
-    e_greater = _exp(log_e_one_sided(n, n_improve))  # candidate better
+    e_less = _exp(log_e_one_sided(n, n_regress, q_max))  # candidate worse
+    e_greater = _exp(log_e_one_sided(n, n_improve, q_max))  # candidate better
     if alternative == "less":
         return e_less
     if alternative == "greater":
@@ -122,6 +129,7 @@ def e_value(n_regress: int, n_improve: int, alternative: Alternative) -> float:
 class SequentialState:
     """Cumulative state of the pass-rate test at a batch boundary."""
 
+    q_max: float = 1.0
     n_pairs: int = 0
     n_regress: int = 0
     n_improve: int = 0
@@ -134,8 +142,9 @@ class SequentialState:
     def update(self, batch_pairs: Sequence[Pair], alternative: Alternative) -> SequentialState:
         n_regress = self.n_regress + sum(p.regress for p in batch_pairs)
         n_improve = self.n_improve + sum(p.improve for p in batch_pairs)
-        e = e_value(n_regress, n_improve, alternative)
+        e = e_value(n_regress, n_improve, alternative, self.q_max)
         return SequentialState(
+            q_max=self.q_max,
             n_pairs=self.n_pairs + len(batch_pairs),
             n_regress=n_regress,
             n_improve=n_improve,
@@ -143,7 +152,7 @@ class SequentialState:
         )
 
     def e(self, alternative: Alternative) -> float:
-        return e_value(self.n_regress, self.n_improve, alternative)
+        return e_value(self.n_regress, self.n_improve, alternative, self.q_max)
 
     def p_value(self) -> float:
         """Anytime-valid p-value from the running maximum of E."""
@@ -161,11 +170,11 @@ class SequentialState:
         return "regression" if self.n_regress > self.n_improve else "improvement"
 
 
-def min_discordant_to_detect(alpha: float) -> int:
+def min_discordant_to_detect(alpha: float, q_max: float = 1.0) -> int:
     """Smallest n such that n regressions out of n discordant pairs crosses 1/alpha."""
     threshold = math.log(1.0 / alpha)
     n = 0
-    while log_e_one_sided(n, n) < threshold:
+    while log_e_one_sided(n, n, q_max) < threshold:
         n += 1
     return n
 

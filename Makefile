@@ -1,4 +1,4 @@
-.PHONY: dev check test docker-test demo clean
+.PHONY: dev check test docker-test demo power clean
 
 # One-command setup: the canary's env plus the isolated, hash-locked Harbor env (ADR-0002).
 dev:
@@ -6,8 +6,8 @@ dev:
 	uv sync --frozen --project tools/harbor
 
 check:
-	uv run ruff check src tests
-	uv run ruff format --check src tests
+	uv run ruff check src tests benchmarks
+	uv run ruff format --check src tests benchmarks
 	uv run mypy
 	uv run pytest -m "not docker"
 
@@ -21,6 +21,10 @@ docker-test:
 # Simulated compare: no Docker, no API keys, no spend.
 demo:
 	uv run canary compare stable regressed -c examples/simulated
+
+# Simulated power analysis for the pass-rate test (no spend). Writes benchmarks/results/.
+power:
+	uv run python benchmarks/power_simulation.py
 
 # Sealed bundles are read-only; restore write permission before deleting local state.
 clean:
