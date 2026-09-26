@@ -83,6 +83,7 @@ class SimulatedRunner:
                             reported_cost_usd=round(arm.cost_usd * float(noise[2]), 6),
                             agent_seconds=round(arm.agent_seconds * float(noise[3]), 3),
                             installed_version=request.pins[pin_name].version,
+                            version_source="trajectory",
                         )
                     )
         return records

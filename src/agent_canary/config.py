@@ -149,13 +149,28 @@ class RunnerConfig(_Strict):
     )
     environment: str = "docker"
     keep_images: bool = Field(
-        default=True,
+        default=False,
         description=(
-            "Keep built task images between trials. Harbor's delete mode runs "
-            "`docker compose down --rmi local`, which forces a rebuild in every batch."
+            "Keep built task images between trials. Harbor tags one image per trial, so this "
+            "accumulates images; with a warm Docker build cache the rebuild saving is small."
         ),
     )
+    harness_cache: bool = Field(
+        default=True,
+        description=(
+            "Download each pinned harness binary once on the host, verify it against the "
+            "vendor manifest, and mount it read-only into sandboxes (Claude Code, glibc images)."
+        ),
+    )
+    harness_cache_dir: Path | None = Field(
+        default=None, description="Default: $XDG_CACHE_HOME/agent-canary/harness."
+    )
     n_concurrent: Annotated[int, Field(ge=1)] = 4
+    agent_setup_timeout_multiplier: Annotated[float, Field(gt=0)] | None = Field(
+        default=None,
+        description="Scales Harbor's agent-setup timeout (360 s by default), which covers "
+        "installing the harness inside each sandbox.",
+    )
     batch_timeout_sec: Annotated[float, Field(gt=0)] = 4 * 3600
     simulated: dict[str, SimulatedArm] = Field(
         default_factory=dict, description="Per-pin behaviour for the simulated runner."

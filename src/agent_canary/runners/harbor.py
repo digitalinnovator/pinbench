@@ -22,12 +22,51 @@ from pydantic import BaseModel, ConfigDict
 
 from agent_canary.config import PinSpec, RunnerConfig
 from agent_canary.digest import canonical_json
+from agent_canary.harness_cache import (
+    CLAUDE_MOUNT_TARGET,
+    CachedBinary,
+    default_cache_root,
+    ensure_claude_code,
+    sandbox_platform,
+)
 from agent_canary.models import TrialRecord, TrialStatus
 from agent_canary.runners import BatchRequest, RunnerError
 
 log = logging.getLogger(__name__)
 
 _MAX_MESSAGE = 2000
+
+# Harbor exceptions that say nothing about the harness under test: the trial becomes ERROR and is
+# excluded from pairing even if the verifier still wrote a reward. Everything else, including
+# AgentTimeoutError, ContextWindowExceededError, OutputTokenExceededError, AgentSafetyRefusalError
+# and a plain harness crash, stays attributable to the harness: a new version causing them is a
+# regression. Caveat (ADR-0003): if one arm provokes more rate limiting, excluding those trials
+# biases the comparison; the report shows errors per arm.
+INFRASTRUCTURE_EXCEPTIONS = frozenset(
+    {
+        "AgentAuthenticationError",
+        "ModelNotFoundError",
+        "NetworkConnectionError",
+        "ApiConnectionClosedError",
+        "ApiInternalServerError",
+        "ApiOverloadedError",
+        "ApiProviderResourceNotFoundError",
+        "ApiRateLimitError",
+        "ApiResponseStalledError",
+        "ApiUsageLimitError",
+        "UnknownApiError",
+        "AgentSetupTimeoutError",
+        "EnvironmentStartTimeoutError",
+        "SandboxBuildFailedError",
+        "HealthcheckError",
+        "VerifierTimeoutError",
+        "VerifierOutputParseError",
+        "RewardFileEmptyError",
+        "RewardFileNotFoundError",
+        "AddTestsDirError",
+        "DownloadVerifierDirError",
+    }
+)
 _VERSION_RE = re.compile(r"\d+\.\d+\.\d+\S*")
 
 
@@ -145,8 +184,13 @@ def pin_identities(pins: dict[str, PinSpec]) -> dict[str, str]:
     return seen
 
 
-def job_config(request: BatchRequest, runner: RunnerConfig, job_name: str) -> dict[str, Any]:
-    return {
+def job_config(
+    request: BatchRequest,
+    runner: RunnerConfig,
+    job_name: str,
+    mounts: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    cfg: dict[str, Any] = {
         "job_name": job_name,
         "jobs_dir": str(request.bundle_dir / "harbor"),
         "n_attempts": request.attempts,
@@ -157,6 +201,20 @@ def job_config(request: BatchRequest, runner: RunnerConfig, job_name: str) -> di
         "agents": [agent_config(pin) for pin in request.pins.values()],
         "tasks": [{"path": str(task.path)} for task in request.tasks],
     }
+    if runner.agent_setup_timeout_multiplier is not None:
+        cfg["agent_setup_timeout_multiplier"] = runner.agent_setup_timeout_multiplier
+    if mounts:
+        cfg["environment"]["mounts"] = mounts
+    return cfg
+
+
+def harness_mounts(binaries: list[CachedBinary]) -> list[dict[str, Any]]:
+    """Bind-mount cached harness binaries where Harbor's install check will find them."""
+    return [
+        {"type": "bind", "source": str(b.path), "target": CLAUDE_MOUNT_TARGET, "read_only": True}
+        for b in binaries
+        if b.harness == "claude-code"
+    ]
 
 
 def parse_trial(
@@ -168,14 +226,14 @@ def parse_trial(
     trial_dir: str | None,
 ) -> TrialRecord:
     reward = result.reward()
-    if reward is None:
+    exc = result.exception_info
+    if reward is None or (exc is not None and exc.exception_type in INFRASTRUCTURE_EXCEPTIONS):
         status = TrialStatus.ERROR
     elif reward >= pass_threshold:
         status = TrialStatus.PASS
     else:
         status = TrialStatus.FAIL
     agent = result.agent_result or _AgentResult()
-    exc = result.exception_info
     return TrialRecord(
         trial_name=result.trial_name,
         task=result.task_dir_name,
@@ -189,11 +247,27 @@ def parse_trial(
         reported_cost_usd=agent.cost_usd,
         agent_seconds=result.agent_execution.seconds() if result.agent_execution else None,
         installed_version=result.agent_info.version,
+        version_source="runner" if result.agent_info.version else None,
         exception_type=exc.exception_type if exc else None,
         exception_message=exc.exception_message[:_MAX_MESSAGE] if exc else None,
         started_at=result.started_at,
         trial_dir=trial_dir,
     )
+
+
+def trajectory_version(trial_dir: Path) -> str | None:
+    """The harness version recorded in the ATIF transcript, which is what actually ran.
+
+    Harbor's `agent_info.version` echoes the requested version when one is pinned, even if setup
+    failed before anything was installed (spike 0001), so it cannot prove a pin held.
+    """
+    path = trial_dir / "agent" / "trajectory.json"
+    try:
+        agent = json.loads(path.read_text()).get("agent") or {}
+    except (OSError, ValueError):
+        return None
+    version = agent.get("version")
+    return version if isinstance(version, str) and version not in ("", "unknown") else None
 
 
 def collect_trials(
@@ -212,15 +286,19 @@ def collect_trials(
         pin = identities.get(ident)
         if pin is None:
             raise RunnerError(f"trial {result.trial_name} matches no pin (agent config {ident})")
-        records.append(
-            parse_trial(
-                result,
-                pin=pin,
-                batch=batch,
-                pass_threshold=pass_threshold,
-                trial_dir=result_path.parent.relative_to(bundle_dir).as_posix(),
-            )
+        record = parse_trial(
+            result,
+            pin=pin,
+            batch=batch,
+            pass_threshold=pass_threshold,
+            trial_dir=result_path.parent.relative_to(bundle_dir).as_posix(),
         )
+        ran = trajectory_version(result_path.parent)
+        if ran is not None:
+            record = record.model_copy(
+                update={"installed_version": ran, "version_source": "trajectory"}
+            )
+        records.append(record)
     return records
 
 
@@ -264,14 +342,54 @@ class HarborRunner:
             "n_concurrent": self._config.n_concurrent,
         }
 
+    def _cached_harnesses(self, pins: dict[str, PinSpec]) -> list[CachedBinary]:
+        """Cache the pinned Claude Code binary when every Claude Code pin shares one version.
+
+        Harbor mounts are job-wide, so pins with different Claude Code versions in one job fall
+        back to Harbor's in-sandbox install (slow, but correct).
+        """
+        if not self._config.harness_cache:
+            return []
+        versions = {p.version for p in pins.values() if p.harness == "claude-code" and p.version}
+        if len(versions) != 1:
+            if len(versions) > 1:
+                log.warning(
+                    "pins use different Claude Code versions; installing inside each sandbox",
+                    extra={"versions": sorted(versions)},
+                )
+            return []
+        root = self._config.harness_cache_dir or default_cache_root()
+        return [ensure_claude_code(versions.pop(), root, sandbox_platform())]
+
     def run_batch(self, request: BatchRequest) -> list[TrialRecord]:
         identities = pin_identities(request.pins)
         job_name = f"batch-{request.batch:03d}"
         configs_dir = request.bundle_dir / "harbor-configs"
         configs_dir.mkdir(parents=True, exist_ok=True)
+        binaries = self._cached_harnesses(request.pins)
+        if binaries:
+            (configs_dir / f"{job_name}.harness.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "harness": b.harness,
+                            "version": b.version,
+                            "platform": b.platform,
+                            "sha256": b.sha256,
+                            "source_url": b.source_url,
+                        }
+                        for b in binaries
+                    ],
+                    indent=2,
+                )
+                + "\n"
+            )
         config_path = configs_dir / f"{job_name}.yaml"
         config_path.write_text(
-            yaml.safe_dump(job_config(request, self._config, job_name), sort_keys=False)
+            yaml.safe_dump(
+                job_config(request, self._config, job_name, harness_mounts(binaries)),
+                sort_keys=False,
+            )
         )
         log_path = configs_dir / f"{job_name}.log"
         log.info(

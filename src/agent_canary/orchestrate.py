@@ -95,7 +95,7 @@ def _check_drift(records: list[TrialRecord], pins: dict[str, PinSpec]) -> None:
             (r.pin, pins[r.pin].version, r.installed_version)
             for r in records
             if pins[r.pin].version
-            and r.installed_version
+            and r.version_source == "trajectory"
             and r.installed_version != pins[r.pin].version
         },
         key=str,

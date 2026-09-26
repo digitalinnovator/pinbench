@@ -14,6 +14,8 @@ kind = "harbor"
 harbor_command = ["uv", "run", "--project", "../../tools/harbor", "--frozen", "harbor"]
 environment = "docker"
 n_concurrent = 4
+# Harness install inside each sandbox (download + first launch) can exceed Harbor's 360 s default.
+agent_setup_timeout_multiplier = 2.0
 
 [stats]
 alpha = 0.05

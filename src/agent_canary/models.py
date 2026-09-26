@@ -36,6 +36,11 @@ class TrialRecord(_Record):
     )
     agent_seconds: float | None = None
     installed_version: str | None = None
+    version_source: Literal["trajectory", "runner"] | None = Field(
+        default=None,
+        description="'trajectory': read from the harness's own transcript (proof of what ran). "
+        "'runner': reported by the runner, which may just echo the requested version.",
+    )
     exception_type: str | None = None
     exception_message: str | None = None
     started_at: datetime | None = None

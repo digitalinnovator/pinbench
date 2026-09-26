@@ -172,7 +172,7 @@ def test_job_config_holds_every_arm_in_one_job(tmp_path: Path) -> None:
         BatchRequest(2, tasks, pins, 3, tmp_path), RunnerConfig(n_concurrent=8), "batch-002"
     )
     assert cfg["n_attempts"] == 3
-    assert cfg["environment"] == {"type": "docker", "delete": False}
+    assert cfg["environment"] == {"type": "docker", "delete": True}
     assert cfg["n_concurrent_trials"] == 8
     assert cfg["jobs_dir"] == str(tmp_path / "harbor")
     assert [t["path"] for t in cfg["tasks"]] == [str(tmp_path / "a"), str(tmp_path / "b")]
@@ -189,3 +189,77 @@ def test_job_config_holds_every_arm_in_one_job(tmp_path: Path) -> None:
             "env": {"DISABLE_PROMPT_CACHING": "1"},
         },
     ]
+
+
+def test_running_version_comes_from_the_trajectory(tmp_path: Path) -> None:
+    bundle = tmp_path / "bundle"
+    job = bundle / "harbor" / "batch-000"
+    shutil.copytree(ORACLE_JOB, job)
+    trial = job / "hello-world__9H9CnxN"
+    ids = pin_identities({"oracle": PinSpec(harness="oracle")})
+
+    (record,) = collect_trials(job, bundle, ids, batch=0, pass_threshold=1.0)
+    assert (record.installed_version, record.version_source) == ("1.0.0", "runner")
+
+    (trial / "agent").mkdir(exist_ok=True)
+    (trial / "agent" / "trajectory.json").write_text(
+        json.dumps({"schema_version": "ATIF-v1.7", "agent": {"name": "x", "version": "2.1.284"}})
+    )
+    (record,) = collect_trials(job, bundle, ids, batch=0, pass_threshold=1.0)
+    assert (record.installed_version, record.version_source) == ("2.1.284", "trajectory")
+
+
+def test_setup_timeout_multiplier_reaches_the_job(tmp_path: Path) -> None:
+    pins = {"o": PinSpec(harness="oracle")}
+    request = BatchRequest(0, (TaskRef("a", tmp_path / "a", "d"),), pins, 1, tmp_path)
+    assert "agent_setup_timeout_multiplier" not in job_config(request, RunnerConfig(), "b")
+    cfg = job_config(request, RunnerConfig(agent_setup_timeout_multiplier=2.0), "b")
+    assert cfg["agent_setup_timeout_multiplier"] == 2.0
+
+
+def test_cached_harness_is_mounted_read_only(tmp_path: Path) -> None:
+    from agent_canary.harness_cache import CachedBinary
+    from agent_canary.runners.harbor import harness_mounts
+
+    binary = CachedBinary("claude-code", "2.1.283", "linux-x64", "ab" * 32, "https://x", tmp_path)
+    pins = {"o": PinSpec(harness="oracle")}
+    request = BatchRequest(0, (TaskRef("a", tmp_path / "a", "d"),), pins, 1, tmp_path)
+    cfg = job_config(request, RunnerConfig(), "b", harness_mounts([binary]))
+    assert cfg["environment"]["mounts"] == [
+        {
+            "type": "bind",
+            "source": str(tmp_path),
+            "target": "/usr/local/bin/claude",
+            "read_only": True,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    ("exception_type", "expected"),
+    [
+        ("UnknownApiError", TrialStatus.ERROR),
+        ("AgentAuthenticationError", TrialStatus.ERROR),
+        ("ApiRateLimitError", TrialStatus.ERROR),
+        ("AgentTimeoutError", TrialStatus.FAIL),
+        ("ContextWindowExceededError", TrialStatus.FAIL),
+        ("NonZeroAgentExitCodeError", TrialStatus.FAIL),
+    ],
+)
+def test_api_failures_are_errors_but_agent_failures_count(
+    tmp_path: Path, exception_type: str, expected: TrialStatus
+) -> None:
+    """Spike 0001: an unscoped API key made every trial exit before any work, yet the verifier
+    still wrote reward 0. That must not count against the harness."""
+    path = _claude_like(
+        tmp_path,
+        verifier_result={"rewards": {"reward": 0.0}},
+        exception_info={
+            "exception_type": exception_type,
+            "exception_message": "x",
+            "exception_traceback": "",
+            "occurred_at": "2026-09-26T21:44:22Z",
+        },
+    )
+    record = parse_trial(_load(path), pin="p", batch=0, pass_threshold=1.0, trial_dir=None)
+    assert record.status is expected

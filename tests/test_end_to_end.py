@@ -91,7 +91,7 @@ def test_dollar_budget_stops_the_loop(simulated_project: Path) -> None:
 def test_single_run_and_rerender_report(simulated_project: Path) -> None:
     result = _invoke("run", "good", "-c", str(simulated_project), "--attempts", "2")
     assert result.exit_code == 0
-    assert "/12 passed" in result.output
+    assert "(of 12)" in result.output
     run_id = result.output.split("run ", 1)[1].split(":", 1)[0]
     out = simulated_project / "custom.html"
     assert _invoke("report", run_id, "-c", str(simulated_project), "-o", str(out)).exit_code == 0
@@ -125,3 +125,20 @@ def test_pin_drift_aborts_and_still_seals_bundle(simulated_project: Path) -> Non
     (run_dir,) = (simulated_project / ".canary" / "runs").iterdir()
     assert (run_dir / "SHA256SUMS").exists()
     assert not (run_dir / "verdict.json").exists()
+
+
+class _EchoingRunner(_DriftingRunner):
+    """Reports a mismatched version only as the runner's echo, with no transcript proof."""
+
+    def run_batch(self, request: BatchRequest) -> list[TrialRecord]:
+        return [
+            r.model_copy(update={"version_source": "runner"}) for r in super().run_batch(request)
+        ]
+
+
+def test_drift_needs_transcript_proof(simulated_project: Path) -> None:
+    loaded = load_config(simulated_project)
+    outcome = run_compare(
+        loaded, load_suite(loaded), _EchoingRunner(), "good", "bad", max_batches=1
+    )
+    assert outcome.verdict is not None

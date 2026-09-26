@@ -87,7 +87,7 @@ The price is a higher floor. At least 10 discordant pairs are needed to raise an
 - Pairing and concurrency remove task-difficulty variance and time drift. The price is always running the baseline arm too, which roughly doubles cost per batch compared with testing against stored history. A future "history mode" can test against stored baselines for cheap daily monitoring, and accept the drift risk explicitly.
 - Concordant pairs are wasted spend from the pass-rate test's point of view. Tasks the agent always passes or always fails add cost and no signal. The report shows discordance per task so users can prune suites.
 - **The bootstrap intervals are not anytime-valid.** They are computed once, at the stopping time, and are optimistic if read after every batch. The report labels them as fixed-sample intervals at stop. A confidence-sequence replacement is on the roadmap.
-- Infrastructure errors (the sandbox failed to start, or no verifier result) drop the pair. The guarantee assumes those drops are unrelated to the outcome. The report shows dropped pairs.
+- Infrastructure errors drop the pair: no verifier result, or an exception in `INFRASTRUCTURE_EXCEPTIONS` (`runners/harbor.py`), such as authentication, rate limiting, API outages or sandbox setup. Agent timeouts, context-window overflows, refusals and harness crashes count as failures, because a harness version can cause them. The guarantee assumes those drops are unrelated to the outcome. The report shows dropped pairs.
 - Pass criteria are binary: reward ≥ threshold, default 1.0. Graded rewards need another test, which is on the roadmap.
 
 ## Alternatives considered

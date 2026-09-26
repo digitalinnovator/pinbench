@@ -130,8 +130,16 @@ def run(
         typer.secho(f"error: {exc}", fg="red", err=True)
         raise typer.Exit(EXIT_ERROR) from None
     trials = outcome.bundle.trials()
-    passes = sum(t.status.value == "pass" for t in trials)
-    typer.echo(f"run {outcome.bundle.run_id}: {passes}/{len(trials)} passed")
+    counts = {s: sum(t.status.value == s for t in trials) for s in ("pass", "fail", "error")}
+    typer.echo(
+        f"run {outcome.bundle.run_id}: {counts['pass']} passed, {counts['fail']} failed, "
+        f"{counts['error']} errored (of {len(trials)})"
+    )
+    kinds = sorted(
+        {t.exception_type for t in trials if t.status.value == "error" and t.exception_type}
+    )
+    if kinds:
+        typer.secho(f"errors: {', '.join(kinds)} (see the report)", fg="yellow")
     if report:
         path = render_report(outcome.bundle, _report_path(loaded, outcome.bundle.run_id))
         typer.echo(f"report {path}")

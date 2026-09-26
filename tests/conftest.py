@@ -93,4 +93,5 @@ def record(
         reward={TrialStatus.PASS: 1.0, TrialStatus.FAIL: 0.0}.get(status),
         reported_cost_usd=cost,
         installed_version=version,
+        version_source="trajectory" if version else None,
     )
