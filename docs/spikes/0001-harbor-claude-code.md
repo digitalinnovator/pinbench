@@ -95,13 +95,29 @@ Run `20260926T233333Z-compare-b16d31`, 2 batches × 3 tasks × 2 arms, $0.99:
 | Agent time | ×0.55 | 0.46–0.74 |
 | Reported cost | ×0.89 | 0.61–1.43 |
 
-**Observation (a hypothesis, not a finding):** cost moved much less than tokens. In batch 0 the low-effort trials cost $0.08–0.14; in batch 1, $0.03–0.06. The baseline arm was cheap in both batches, and the spike had run the baseline configuration two minutes earlier. This is consistent with **server-side prompt-cache warmth carrying over between runs**, which would bias cost comparisons toward whichever arm ran recently. Mitigations to evaluate:
+**Observation:** cost moved much less than tokens. In batch 0 the low-effort trials cost $0.08–0.14; in batch 1, $0.03–0.06. The baseline arm was cheap in both batches, and the spike had run the baseline configuration two minutes earlier.
 
-- a discarded warm-up batch per arm;
-- reporting cache reads and writes separately;
-- re-pricing from tokens (ADR-0005).
+**Confirmed on 2026-09-30 from the stored transcripts, at no extra spend: this is prompt-cache warmth.** Per-request usage in the ATIF trajectories shows what the first model request of each trial wrote to and read from the prompt cache:
 
-Test it before trusting any cost ratio.
+| Arm, batch | Trials | First request: cache write | First request: cache read | Cost per trial |
+|---|---|---|---|---|
+| `cc-baseline`, batch 0 (ran 2 min after section 3) | 3 | 0 | 15.9k–16.0k | $0.054–0.117 |
+| `cc-low-effort`, batch 0, first two trials | 2 | 15.9k–16.0k | 0 | $0.125–0.136 |
+| `cc-low-effort`, batch 0, third trial (started 80 s later) | 1 | 3.4k | 12.6k | $0.076 |
+| `cc-low-effort`, batch 1 | 3 | 0 | 15.9k–16.0k | $0.034–0.055 |
+
+- A configuration's first trials pay a cache write of about 16,000 tokens (system prompt and tool definitions), which is about $0.10 on Opus 5. Later trials read it back for about $0.008.
+- Changing the reasoning effort changes the cached prefix, so the low-effort arm started cold while the baseline arm was already warm.
+- The third low-effort trial started after the first two had finished and was already mostly warm. So the penalty falls on the first `n_concurrent` trials of an arm, not on a whole batch.
+- The section 3 run, the very first, read about 10k tokens from cache on its first requests. Part of the prefix was already cached before the canary ran anything. The cause is unknown; other Claude Code use on the same workspace is the likely one.
+
+What changed as a result ([ADR-0005](../adr/0005-cost-normalisation.md), now accepted):
+
+- `cost_usd` is re-priced from per-request token usage with the canary's own price table. On all 15 scored trials it reproduces the reported cost, which validates the accounting.
+- Cache reads and writes are reported as separate metrics.
+- `[stats] warmup_batches` leaves the first batches out of the cost comparison. The demo suite sets 1.
+
+With batch 0 left out, the same data gives a low-effort cost of $0.043 per trial against $0.082 for the baseline. That is 3 trials per arm on three easy tasks: a direction, not a result.
 
 ## Result
 

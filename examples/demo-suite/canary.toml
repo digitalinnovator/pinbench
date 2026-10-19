@@ -20,6 +20,8 @@ agent_setup_timeout_multiplier = 2.0
 [stats]
 alpha = 0.05
 alternative = "less"
+# With 3 tasks, the first batch's prompt-cache writes dominate cost (spike 0001, section 4).
+warmup_batches = 1
 
 [budget]
 max_usd = 5.0
@@ -33,12 +35,14 @@ harness = "oracle"
 [pins.nop]
 harness = "nop"
 
-# --- Claude Code, pinned exactly. max_budget_usd caps each trial inside the harness.
+# --- Claude Code, pinned exactly. max_budget_usd caps each trial inside the harness. The campaign
+# ledger reserves that cap plus one in-flight request per trial (ADR-0009). Measured trials on
+# these tasks cost $0.03-0.14 (spike 0001), so $0.30 leaves room without reserving dollars.
 [pins.cc-baseline]
 harness = "claude-code"
 version = "2.1.283"
 model = "anthropic/claude-opus-5"
-options = { reasoning_effort = "high", max_budget_usd = "1.00" }
+options = { reasoning_effort = "high", max_budget_usd = "0.30" }
 
 # The next three pins inject the harness-layer regressions from Anthropic's 2026-04-23 postmortem.
 # Lower reasoning effort (postmortem: default effort lowered, Mar 4).
@@ -46,19 +50,32 @@ options = { reasoning_effort = "high", max_budget_usd = "1.00" }
 harness = "claude-code"
 version = "2.1.283"
 model = "anthropic/claude-opus-5"
-options = { reasoning_effort = "low", max_budget_usd = "1.00" }
+options = { reasoning_effort = "low", max_budget_usd = "0.30" }
 
 # Verbosity instruction (postmortem: verbosity system-prompt change, Apr 16).
 [pins.cc-verbose]
 harness = "claude-code"
 version = "2.1.283"
 model = "anthropic/claude-opus-5"
-options = { reasoning_effort = "high", max_budget_usd = "1.00", append_system_prompt = "Keep every response under 25 words. Do not explain your reasoning, restate the task or summarise your changes." }
+options = { reasoning_effort = "high", max_budget_usd = "0.30", append_system_prompt = "Keep every response under 25 words. Do not explain your reasoning, restate the task or summarise your changes." }
 
 # Prompt caching disabled (postmortem: thinking-block caching bug, Mar 26; an approximation).
 [pins.cc-no-cache]
 harness = "claude-code"
 version = "2.1.283"
 model = "anthropic/claude-opus-5"
-options = { reasoning_effort = "high", max_budget_usd = "1.00" }
+options = { reasoning_effort = "high", max_budget_usd = "0.30" }
 env = { DISABLE_PROMPT_CACHING = "1" }
+
+# --- Release watcher: `canary watch` checks npm for a newer Claude Code than the baseline pin.
+# `canary watch --run` then compares the baseline with the same pin at the new version.
+[watch.claude-code]
+baseline = "cc-baseline"
+channel = "latest"             # or "stable"
+
+# --- Alerts (off until a channel is set). Secrets are read from the named environment variables.
+# [alerts]
+# on = ["regression", "cost_increase"]
+# slack_webhook_env = "CANARY_SLACK_WEBHOOK"
+# github_repo = "your-org/your-repo"
+# github_token_env = "GITHUB_TOKEN"

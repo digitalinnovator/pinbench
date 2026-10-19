@@ -68,7 +68,7 @@
       <span class="badge {{ verdict.decision }}">
         {% if verdict.decision == "regression" %}Regression detected{% elif verdict.decision == "improvement" %}Improvement detected{% else %}Inconclusive at this budget{% endif %}
       </span>
-      <span class="muted">stopped: {{ {"significant": "significant result", "budget_usd": "dollar budget reached", "max_batches": "batch limit reached"}[verdict.stop_reason] }}
+      <span class="muted">stopped: {{ {"significant": "significant result", "budget_usd": "dollar budget reached", "max_batches": "batch limit reached", "futility": "futility look: the candidate was not behind by enough", "dead_batch": "a batch produced no usable pairs", "ledger": "campaign ledger limit reached"}[verdict.stop_reason] }}
         after {{ verdict.batches_run }} batch{{ "es" if verdict.batches_run != 1 }}</span>
     </div>
     <div class="kv">
@@ -79,7 +79,13 @@
       <div><span>{{ verdict.candidate.pin }} pass rate</span>{{ verdict.candidate.passes }}/{{ verdict.candidate.n }}{% if verdict.candidate.n %} ({{ "%.0f"|format(100 * verdict.candidate.passes / verdict.candidate.n) }}%){% endif %}</div>
       <div><span>Discordant pairs (regress / improve)</span>{{ verdict.n_discordant }} ({{ verdict.n_regress }} / {{ verdict.n_improve }})</div>
       <div><span>Pairs used / dropped</span>{{ verdict.n_pairs }} / {{ verdict.dropped_pairs }}</div>
-      <div><span>Spend (harness-reported)</span>${{ "%.2f"|format(verdict.spent_usd) }}{% if not verdict.cost_known %} <span class="error">incomplete</span>{% endif %}</div>
+      {% if verdict.baseline.checked or verdict.candidate.checked %}
+      <div><span>False success / "tests pass" claims</span>{{ verdict.baseline.pin }} {{ verdict.baseline.false_success }}/{{ verdict.baseline.claims }} · {{ verdict.candidate.pin }} {{ verdict.candidate.false_success }}/{{ verdict.candidate.claims }}</div>
+      {% endif %}
+      {% if verdict.baseline.cap_hits or verdict.candidate.cap_hits %}
+      <div><span>Trials stopped by a spend or turn cap</span>{{ verdict.baseline.pin }} {{ verdict.baseline.cap_hits }} · {{ verdict.candidate.pin }} {{ verdict.candidate.cap_hits }}</div>
+      {% endif %}
+      <div><span>Spend (higher of reported and re-priced)</span>{% if not verdict.cost_known and verdict.spent_usd %}≤ {% endif %}${{ "%.2f"|format(verdict.spent_usd) }}{% if not verdict.cost_known %} <span class="error" title="Some trials had no cost and are counted at their spending cap, or at zero if they have none.">upper bound</span>{% endif %}</div>
     </div>
   </div>
 
@@ -115,7 +121,7 @@
       </tr>
       {% endfor %}
     </table>
-    <div class="muted">Means per trial; cluster bootstrap over tasks. These intervals are fixed-sample at the stopping time, not anytime-valid.</div>
+    <div class="muted">{% if verdict.metrics_from_batch %}Batches before {{ verdict.metrics_from_batch }} are left out as prompt-cache warm-up. {% endif %}Means per trial; cluster bootstrap over tasks. input_tokens counts everything sent, including cache reads and writes. These intervals are fixed-sample at the stopping time, not anytime-valid.</div>
   </div>
   {% endif %}
 
@@ -152,22 +158,26 @@
   <div class="card scroll" id="task-{{ task }}" style="margin-bottom:14px">
     <strong>{{ task }}</strong>
     <table>
-      <tr><th>Batch</th><th>Pin</th><th>Status</th><th class="num">In tok</th><th class="num">Out tok</th><th class="num">Cost</th><th class="num">Agent s</th><th>Version</th><th>Files</th></tr>
+      <tr><th>Batch</th><th>Pin</th><th>Status</th><th class="num">In tok</th><th class="num">Out tok</th><th class="num">Cost</th><th class="num">Agent s</th><th>Version</th><th>Claim check</th><th>Files</th></tr>
       {% for row in rows %}{% set r = row.r %}
       <tr>
         <td class="num">{{ r.batch }}</td><td class="mono">{{ r.pin }}</td>
-        <td class="{{ r.status.value }}">{{ r.status.value }}{% if r.exception_type %} <span class="muted">({{ r.exception_type }})</span>{% endif %}</td>
+        <td class="{{ r.status.value }}">{{ r.status.value }}{% if r.exception_type %} <span class="muted">({{ r.exception_type }})</span>{% endif %}{% if r.harness_stop and r.harness_stop != "success" %} <span class="error">{{ r.harness_stop }}</span>{% endif %}</td>
         <td class="num">{{ "{:,}".format(r.n_input_tokens) if r.n_input_tokens is not none else "—" }}</td>
         <td class="num">{{ "{:,}".format(r.n_output_tokens) if r.n_output_tokens is not none else "—" }}</td>
-        <td class="num">{{ "$%.3f"|format(r.reported_cost_usd) if r.reported_cost_usd is not none else "—" }}</td>
+        <td class="num">{% if r.cost_usd is not none %}<span title="re-priced from tokens; harness reported {{ "$%.4f"|format(r.reported_cost_usd) if r.reported_cost_usd is not none else "nothing" }}">{{ "$%.3f"|format(r.cost_usd) }}</span>{% elif r.reported_cost_usd is not none %}<span class="muted" title="harness-reported; not re-priced">{{ "$%.3f"|format(r.reported_cost_usd) }}*</span>{% else %}—{% endif %}</td>
         <td class="num">{{ "%.0f"|format(r.agent_seconds) if r.agent_seconds is not none else "—" }}</td>
         <td class="mono">{{ r.installed_version or "—" }}</td>
+        <td>{% set c = r.claim_check %}{% if not c or c.verdict == "no_claim" %}<span class="muted">{{ "no claim" if c else "—" }}</span>
+            {% elif c.verdict == "supported" %}<span class="pass">supported</span>
+            {% elif c.verdict == "false_success" %}<span class="fail" title="{{ c.claim_excerpt }}">false success</span> <span class="muted">({{ c.reason.replace("_", " ") }})</span>
+            {% else %}<span class="error" title="{{ c.claim_excerpt }}">unverifiable</span>{% endif %}</td>
         <td>{% if row.result_link %}<a href="{{ row.result_link }}">result</a>{% endif %}
             {% if row.agent_link %} · <a href="{{ row.agent_link }}">agent</a>{% endif %}
             {% if row.verifier_link %} · <a href="{{ row.verifier_link }}">verifier</a>{% endif %}</td>
       </tr>
       {% if row.transcript or r.exception_message %}
-      <tr><td></td><td colspan="8">
+      <tr><td></td><td colspan="9">
         {% if r.exception_message %}<details><summary>exception</summary><pre class="mono">{{ r.exception_message }}</pre></details>{% endif %}
         {% if row.transcript %}
         <details><summary>transcript ({{ row.transcript|length }} steps)</summary>
@@ -190,8 +200,11 @@
   <h2>Read this before acting on the numbers</h2>
   <ul class="notes muted">
     <li>The harness under test is the harness as launched by the runner{% if manifest.runner.harbor_version %} (Harbor {{ manifest.runner.harbor_version }}: headless print mode, permissions bypassed){% endif %}, not an interactive developer setup.</li>
-    <li>Cost is what each harness reported. Harnesses estimate cost from their own bundled price tables, so across harness versions compare tokens first (ADR-0005).</li>
+    <li><code>cost_usd</code> is re-priced from each trial's token usage with the canary's own price table{% if manifest.settings.pricing %} (version {{ manifest.settings.pricing.version }}){% endif %}, so it does not move when a harness changes its bundled prices. If a trial cannot be re-priced, the comparison falls back to <code>reported_cost_usd</code>, the harness's own estimate, marked * in the trial tables (ADR-0005).</li>
+    <li>Prompt-cache state changes cost: a trial that finds a warm cache pays cheap cache reads, a cold one pays cache writes. Compare <code>cache_write_tokens</code> between arms before reading a cost ratio as a harness effect.</li>
     <li>The pass-rate test controls false alarms under the null "average pass rate not lower", evaluated at batch boundaries. Dropped pairs are assumed unrelated to outcomes.</li>
+    <li>Claim check: a rule-based reading of each transcript, with no model involved. "False success" means the agent said its tests pass, but its last test run after its last edit is missing or shows failures. It judges the agent's own claim, not the hidden tests, and it misses claims it cannot parse (ADR-0007).</li>
+    <li>A trial the harness stopped at its spend or turn cap is scored by the hidden tests on whatever it had finished, which is usually a failure. If one arm hits a cap more often, the cap is part of what is being compared.</li>
     <li>Bundle integrity: <code>canary verify {{ manifest.run_id }}</code>.</li>
   </ul>
 </main>

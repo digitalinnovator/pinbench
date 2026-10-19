@@ -11,6 +11,14 @@ FIXTURES = Path(__file__).parent / "fixtures"
 REPO_ROOT = Path(__file__).parent.parent
 
 
+@pytest.fixture(autouse=True)
+def _isolated_ledger(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No test may read or write the operator's real campaign ledger."""
+    monkeypatch.setenv("AGENT_CANARY_LEDGER_DIR", str(tmp_path_factory.mktemp("ledger")))
+
+
 def write_task(root: Path, name: str) -> Path:
     task = root / name
     (task / "environment").mkdir(parents=True)

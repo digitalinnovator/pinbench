@@ -1,4 +1,4 @@
-.PHONY: dev check test docker-test demo power clean
+.PHONY: dev check test docker-test check-suite demo power clean
 
 # One-command setup: the canary's env plus the isolated, hash-locked Harbor env (ADR-0002).
 dev:
@@ -17,6 +17,11 @@ test:
 # Real Harbor trials in Docker with the zero-cost oracle and nop agents.
 docker-test:
 	uv run pytest -m docker -v
+
+# Prove every benchmark task offline: hidden tests fail on the starting code and on the careless
+# solution, and pass on the reference. No Docker, no harness, no spend. Takes a minute or two.
+check-suite:
+	uv run python scripts/check_task.py examples/benchmark-suite/tasks/*
 
 # Simulated compare: no Docker, no API keys, no spend.
 demo:

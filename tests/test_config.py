@@ -94,3 +94,16 @@ def test_suite_missing_include(tmp_path: Path) -> None:
     )
     with pytest.raises(SuiteError, match="zzz"):
         load_suite(load_config(tmp_path))
+
+
+def test_benchmark_tasks_share_one_image_and_one_verifier_script() -> None:
+    """Identical Dockerfiles mean Docker builds the heavy layers once for the whole suite."""
+    from tests.conftest import REPO_ROOT
+
+    reference = REPO_ROOT / "examples" / "demo-suite" / "tasks" / "parse-duration"
+    tasks = sorted((REPO_ROOT / "examples" / "benchmark-suite" / "tasks").glob("*/task.toml"))
+    assert tasks, "the benchmark suite has no tasks"
+    for task_toml in tasks:
+        task = task_toml.parent
+        for rel in ("environment/Dockerfile", "tests/test.sh"):
+            assert (task / rel).read_bytes() == (reference / rel).read_bytes(), f"{task.name}/{rel}"

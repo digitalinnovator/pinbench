@@ -21,6 +21,27 @@ class TrialStatus(StrEnum):
     ERROR = "error"  # no verifier reward: infrastructure failure, excluded from statistics
 
 
+class ClaimCheck(_Record):
+    """Verifier-lite result for one transcript (ADR-0007): a "tests pass" claim against evidence."""
+
+    rules_version: int
+    verdict: Literal["no_claim", "supported", "false_success", "unverifiable"]
+    reason: (
+        Literal["no_test_run_after_last_edit", "test_run_failed", "test_outcome_unknown"] | None
+    ) = None
+    claim_step: int | None = Field(default=None, description="ATIF step_id of the claim.")
+    claim_excerpt: str | None = None
+    last_edit_step: int | None = Field(
+        default=None, description="ATIF step_id of the last edit before the claim."
+    )
+    evidence_step: int | None = Field(
+        default=None, description="ATIF step_id of the test run the claim was checked against."
+    )
+    evidence_command: str | None = None
+    n_test_runs: int = 0
+    edits_after_claim: bool = False
+
+
 class TrialRecord(_Record):
     trial_name: str
     task: str
@@ -31,8 +52,16 @@ class TrialRecord(_Record):
     n_input_tokens: int | None = None
     n_cache_tokens: int | None = None
     n_output_tokens: int | None = None
+    n_cache_write_tokens: int | None = Field(
+        default=None, description="Tokens written to the prompt cache (from the transcript)."
+    )
     reported_cost_usd: float | None = Field(
         default=None, description="Cost as the harness reported it (see ADR-0005)."
+    )
+    cost_usd: float | None = Field(
+        default=None,
+        description="Cost re-priced from token usage with the canary's price table (ADR-0005). "
+        "None if the transcript has no usage or uses a model or mode the table does not cover.",
     )
     agent_seconds: float | None = None
     installed_version: str | None = None
@@ -41,10 +70,18 @@ class TrialRecord(_Record):
         description="'trajectory': read from the harness's own transcript (proof of what ran). "
         "'runner': reported by the runner, which may just echo the requested version.",
     )
+    harness_stop: str | None = Field(
+        default=None,
+        description="How the harness ended the trial, e.g. success, error_max_budget_usd, "
+        "error_max_turns. A cap that stops one arm more often is itself a treatment.",
+    )
     exception_type: str | None = None
     exception_message: str | None = None
     started_at: datetime | None = None
     trial_dir: str | None = Field(default=None, description="Path relative to the bundle root.")
+    claim_check: ClaimCheck | None = Field(
+        default=None, description="None when the harness wrote no transcript."
+    )
 
 
 class PinRecord(_Record):
@@ -102,6 +139,12 @@ class ArmSummary(_Record):
     n: int
     passes: int
     errors: int
+    checked: int = Field(default=0, description="Trials with a transcript the verifier read.")
+    claims: int = Field(default=0, description="Trials whose agent claimed its tests pass.")
+    false_success: int = Field(default=0, description="Claims contradicted by the transcript.")
+    cap_hits: int = Field(
+        default=0, description="Trials the harness stopped at a spend or turn cap."
+    )
 
     @property
     def pass_rate(self) -> float | None:
@@ -120,14 +163,16 @@ class TaskSummary(_Record):
 
 class Verdict(_Record):
     decision: Literal["regression", "improvement", "inconclusive"]
-    stop_reason: Literal["significant", "budget_usd", "max_batches"]
+    stop_reason: Literal[
+        "significant", "budget_usd", "max_batches", "futility", "dead_batch", "ledger"
+    ]
     alternative: Literal["less", "greater", "two-sided"]
     alpha: float
     e_value: float
     p_value: float = Field(description="Anytime-valid p-value: 1 / running max of E.")
     batches_run: int
     spent_usd: float
-    cost_known: bool = Field(description="False if any trial lacked a reported cost.")
+    cost_known: bool = Field(description="False if any trial had neither cost estimate.")
     n_pairs: int
     n_discordant: int
     n_regress: int
@@ -136,5 +181,8 @@ class Verdict(_Record):
     baseline: ArmSummary
     candidate: ArmSummary
     metrics: list[RatioEstimate]
+    metrics_from_batch: int = Field(
+        default=0, description="First batch included in `metrics` ([stats] warmup_batches)."
+    )
     per_task: list[TaskSummary]
     history: list[BatchPoint]

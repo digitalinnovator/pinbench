@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import stat
 from datetime import UTC, datetime
 from pathlib import Path
@@ -97,3 +98,15 @@ def test_index_ingest_and_rebuild(bundle: RunBundle, tmp_path: Path) -> None:
     fresh = RunIndex(tmp_path / "index.db")
     assert fresh.rebuild(tmp_path / "runs") == 1
     assert fresh.list_runs()[0]["kind"] == "run"
+
+
+def test_index_with_an_old_schema_is_rebuilt_from_the_bundles(
+    bundle: RunBundle, tmp_path: Path
+) -> None:
+    path = tmp_path / "index.db"
+    with sqlite3.connect(path) as db:
+        db.execute("CREATE TABLE runs (run_id TEXT PRIMARY KEY)")
+        db.execute("INSERT INTO runs VALUES ('stale')")
+    index = RunIndex(path)  # the bundle fixture lives in the sibling runs/ directory
+    assert [r["run_id"] for r in index.list_runs()] == [bundle.run_id]
+    assert [r["run_id"] for r in RunIndex(path).list_runs()] == [bundle.run_id]

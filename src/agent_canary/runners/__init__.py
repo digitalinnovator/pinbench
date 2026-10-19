@@ -23,6 +23,12 @@ class BatchRequest:
 
 
 class Runner(Protocol):
+    """A runner that calls paid APIs also sets `spends_money = True` (read with getattr).
+
+    It may also define `validate(pins)`, called before anything is reserved or created, to
+    reject a run it could never start.
+    """
+
     def describe(self) -> dict[str, Any]:
         """Identity and version of the back-end, recorded in the run manifest."""
         ...
@@ -34,3 +40,7 @@ class Runner(Protocol):
 
 class RunnerError(RuntimeError):
     pass
+
+
+class RunnerNotStarted(RunnerError):  # noqa: N818  (reads as a state, like StopIteration)
+    """A batch failed before any trial could start, so it cannot have spent anything."""

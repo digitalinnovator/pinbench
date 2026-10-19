@@ -13,7 +13,7 @@ These are working notes from a research pass: registry JSON, the CLIs' source an
   - Mar 26: 2.1.85
   - Apr 16: 2.1.111 and 2.1.112
 
-  Native manifests exist for 2.1.64, 2.1.70, 2.1.89 and 2.1.112. **Not yet verified: whether these builds still behave consistently against today's API.** That is the precondition for the headline replay demo.
+  Native manifests exist for 2.1.64, 2.1.70, 2.1.89 and 2.1.112. **Correction, 2026-09-30:** that list was incomplete. The manifests for 2.1.66, 2.1.69, 2.1.85, 2.1.111 and 2.1.112 all return a linux-x64 build with a checksum (227–241 MB each), so the harness cache can install every build from the postmortem dates. **Not yet verified: whether these builds still behave consistently against today's API.** That is the precondition for the headline replay demo.
 - **Headless output.** `claude -p --output-format stream-json --verbose`.
   - `system/init` carries `claude_code_version`, `model`, `session_id`, tools and MCP servers.
   - `result` carries `total_cost_usd`, `duration_ms`, `duration_api_ms`, `num_turns` and `usage`: input, output, `cache_creation_input_tokens`, `cache_read_input_tokens`.

@@ -235,12 +235,27 @@ def cluster_bootstrap_ratio(
     )
 
 
+# Metric name -> TrialRecord attribute. The cost metric is chosen per run by `cost_metric`.
 METRICS: dict[str, str] = {
-    "cost_usd": "reported_cost_usd",
     "input_tokens": "n_input_tokens",
+    "cache_read_tokens": "n_cache_tokens",
+    "cache_write_tokens": "n_cache_write_tokens",
     "output_tokens": "n_output_tokens",
     "agent_seconds": "agent_seconds",
 }
+
+
+def cost_metric(records: Iterable[TrialRecord]) -> tuple[str, str]:
+    """(metric name, attribute) for the cost comparison (ADR-0005).
+
+    Re-priced cost is used only if every scored trial has it, so both arms are priced by the
+    same table. Otherwise the comparison falls back to what the harnesses reported, and says so
+    in the metric's name.
+    """
+    scored = [r for r in records if r.status is not TrialStatus.ERROR]
+    if scored and all(r.cost_usd is not None for r in scored):
+        return "cost_usd", "cost_usd"
+    return "reported_cost_usd", "reported_cost_usd"
 
 
 def metric_by_task(records: Iterable[TrialRecord], pin: str, attr: str) -> dict[str, list[float]]:

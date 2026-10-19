@@ -16,13 +16,15 @@ Beyond speed, per-trial installs are a reproducibility and supply-chain concern.
 - **Verify against the release manifest.** The download's SHA-256 must match `downloads.claude.ai/claude-code-releases/<version>/manifest.json`. On a mismatch the canary refuses to use the file.
 - **Mount read-only.** Each batch bind-mounts the binary read-only at `/usr/local/bin/claude`. Harbor's install check then sees `claude --version` equal to the pin and skips its own install.
 - **Record provenance.** Each batch writes `harbor-configs/batch-NNN.harness.json` (version, platform, SHA-256, source URL) into the run bundle. The sealed bundle therefore records exactly which harness bytes ran.
-- **Scope.** Claude Code only, on glibc Linux images (`[runner] harness_cache = true`, the default). Harbor mounts are job-wide. If the pins in one job use different Claude Code versions, the canary falls back to Harbor's in-sandbox install and logs a warning.
+- **Scope.** Claude Code only, on glibc Linux images (`[runner] harness_cache = true`, the default).
+- **One job per version (amended 2026-09-30).** Harbor mounts are job-wide, so a batch whose pins use different Claude Code versions is split into one Harbor job per version. Each job mounts its own binary. The jobs start together and share the batch's concurrency budget (`n_concurrent` divided by the number of jobs), so both arms still run in the same time window with the same total API load. Pins that share a version stay in one job, as before.
 
 ## Consequences
 
 - Setup drops from a network-bound multi-minute install to a mount. Trials measure the agent, not the downloader.
 - Every trial of a pin runs byte-identical harness code, verified against the vendor manifest.
-- Comparing two Claude Code *versions* in one job still pays the in-sandbox install until per-arm mounts exist. Options for that, to be decided later: separate jobs per arm within a batch, or version-specific mount paths with a per-agent PATH.
+- Comparing two Claude Code *versions* no longer pays the in-sandbox install. The cost is that each task image is built once per job (cheap with a warm Docker layer cache) and that the two arms are separate Harbor processes. The split is covered by tests against a fake Harbor CLI; **a real two-version run has not been made yet.**
+- Version-specific mount paths with a per-agent PATH would keep one job, but Harbor's install check looks for `claude` on the default PATH, so it was not pursued.
 - Musl-based images (Alpine) need the `linux-*-musl` build. Harbor installs through npm there, and the cache does not cover it yet.
 - The manifest is fetched over HTTPS but its GPG signature is not checked yet. That is on the roadmap.
 

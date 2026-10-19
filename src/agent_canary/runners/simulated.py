@@ -69,6 +69,7 @@ class SimulatedRunner:
                 for attempt in range(request.attempts):
                     passed = bool(rng.random() < p)
                     noise = rng.lognormal(-0.5 * self._sigma**2, self._sigma, size=4)
+                    cost = round(arm.cost_usd * float(noise[2]), 6)
                     records.append(
                         TrialRecord(
                             trial_name=f"{task.name}__{pin_name}__b{request.batch}a{attempt}",
@@ -80,7 +81,8 @@ class SimulatedRunner:
                             n_input_tokens=int(arm.input_tokens * noise[0]),
                             n_cache_tokens=0,
                             n_output_tokens=int(arm.output_tokens * noise[1]),
-                            reported_cost_usd=round(arm.cost_usd * float(noise[2]), 6),
+                            reported_cost_usd=cost,
+                            cost_usd=cost,
                             agent_seconds=round(arm.agent_seconds * float(noise[3]), 3),
                             installed_version=request.pins[pin_name].version,
                             version_source="trajectory",

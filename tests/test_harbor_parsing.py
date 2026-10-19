@@ -292,4 +292,105 @@ def test_real_claude_code_trial(tmp_path: Path) -> None:
         709,
     )
     assert record.reported_cost_usd == pytest.approx(0.08882375)
+    # Re-priced from the transcript's token usage with the canary's own table (ADR-0005).
+    assert record.cost_usd == pytest.approx(0.08882375)
+    assert record.n_cache_write_tokens == 6681
     assert record.agent_seconds == pytest.approx(20.53, abs=0.01)
+    # The agent reported a fix without claiming its tests pass, so there is nothing to refute.
+    assert record.claim_check is not None
+    assert record.claim_check.verdict == "no_claim"
+
+
+def _real_trial(tmp_path: Path, stream: str) -> tuple[Path, Path, dict[str, str]]:
+    bundle = tmp_path / "bundle"
+    job = bundle / "harbor" / "batch-000"
+    shutil.copytree(CLAUDE_JOB, job)
+    (job / "fix-pagination__Jviezym" / "agent" / "claude-code.txt").write_text(stream)
+    pin = PinSpec(
+        harness="claude-code",
+        version="2.1.283",
+        model="anthropic/claude-opus-5",
+        options={"reasoning_effort": "high", "max_budget_usd": "1.00"},
+    )
+    return job, bundle, pin_identities({"cc": pin})
+
+
+def test_a_trial_stopped_by_its_budget_cap_is_recorded(tmp_path: Path) -> None:
+    stream = (
+        '{"type":"system","subtype":"init"}\n'
+        '{"type":"result","subtype":"error_max_budget_usd","is_error":true,"total_cost_usd":1.01}\n'
+    )
+    job, bundle, ids = _real_trial(tmp_path, stream)
+    (record,) = collect_trials(job, bundle, ids, batch=0, pass_threshold=1.0)
+    assert record.harness_stop == "error_max_budget_usd"
+    assert record.status is TrialStatus.PASS  # scored by the verifier's reward, as before
+
+
+def _set_reward(job: Path, reward: float, exception_type: str | None = None) -> None:
+    path = job / "fix-pagination__Jviezym" / "result.json"
+    data = json.loads(path.read_text())
+    data["verifier_result"]["rewards"] = {"reward": reward}
+    if exception_type:
+        data["exception_info"] = {"exception_type": exception_type, "exception_message": "x"}
+    path.write_text(json.dumps(data))
+
+
+def test_an_empty_account_is_an_infrastructure_error_not_a_failure(tmp_path: Path) -> None:
+    stream = (
+        '{"type":"result","subtype":"success","is_error":true,'
+        '"result":"Credit balance is too low"}\n'
+    )
+    job, bundle, ids = _real_trial(tmp_path, stream)
+    _set_reward(job, 0.0)
+    (record,) = collect_trials(job, bundle, ids, batch=0, pass_threshold=1.0)
+    assert record.status is TrialStatus.ERROR
+    assert record.exception_type == "CreditExhaustedError"
+
+
+@pytest.mark.parametrize(
+    "stream",
+    [
+        # A successful result whose summary only mentions the phrase.
+        '{"type":"result","subtype":"success","is_error":false,'
+        '"result":"Added a guard for when the credit balance is too low."}\n',
+        # An error for some other reason that quotes it.
+        '{"type":"result","subtype":"error_during_execution","is_error":true,'
+        '"result":"The test expects the message Credit balance is too low but got None"}\n',
+    ],
+)
+def test_mentioning_the_phrase_does_not_drop_the_trial(tmp_path: Path, stream: str) -> None:
+    job, bundle, ids = _real_trial(tmp_path, stream)
+    _set_reward(job, 0.0)
+    (record,) = collect_trials(job, bundle, ids, batch=0, pass_threshold=1.0)
+    assert record.status is TrialStatus.FAIL
+
+
+def test_a_capped_trial_is_scored_by_reward_even_if_harbor_saw_an_infra_pattern(
+    tmp_path: Path,
+) -> None:
+    stream = '{"type":"result","subtype":"error_max_turns","is_error":true}\n'
+    job, bundle, ids = _real_trial(tmp_path, stream)
+    _set_reward(job, 0.0, "ApiRateLimitError")  # the agent's output contained "rate limit"
+    (record,) = collect_trials(job, bundle, ids, batch=0, pass_threshold=1.0)
+    assert (record.status, record.harness_stop) == (TrialStatus.FAIL, "error_max_turns")
+    assert record.exception_type == "ApiRateLimitError"  # kept for the record
+
+
+def test_job_config_pins_retries_off_and_passes_the_agent_timeout(tmp_path: Path) -> None:
+    pins = {"c": PinSpec(harness="codex", version="0.159.2", model="openai/m", timeout_sec=120)}
+    request = BatchRequest(0, (TaskRef("a", tmp_path / "a", "d"),), pins, 1, tmp_path)
+    cfg = job_config(request, RunnerConfig(), "b")
+    assert cfg["retry"] == {"max_retries": 0}
+    assert cfg["agents"][0]["override_timeout_sec"] == 120
+
+
+def test_a_job_that_allowed_retries_is_rejected(tmp_path: Path) -> None:
+    from agent_canary.runners.harbor import HarborRunner
+
+    runner = HarborRunner(RunnerConfig(), cwd=tmp_path, pass_threshold=1.0)
+    runner._version = "0.23.0"
+    (tmp_path / "lock.json").write_text(
+        json.dumps({"harbor": {"version": "0.23.0"}, "retry": {"max_retries": 2}})
+    )
+    with pytest.raises(RunnerError, match="retried trials bill twice"):
+        runner._check_job_lock(tmp_path)

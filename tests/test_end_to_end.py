@@ -14,8 +14,13 @@ from agent_canary.cli import app
 from agent_canary.config import load_config
 from agent_canary.models import TrialRecord
 from agent_canary.orchestrate import PinDriftError, run_compare
+from agent_canary.pricing import load_price_table
+from agent_canary.report import render_report
 from agent_canary.runners import BatchRequest
+from agent_canary.runners.simulated import SimulatedRunner
+from agent_canary.store import RunIndex
 from agent_canary.suite import load_suite
+from agent_canary.verifier import check_trial
 from tests.conftest import record
 
 cli = CliRunner()
@@ -54,6 +59,9 @@ def test_compare_detects_regression_and_writes_everything(simulated_project: Pat
     assert verdict["stop_reason"] == "significant"
     assert verdict["batches_run"] < 15
     assert {m["metric"] for m in verdict["metrics"]} >= {"cost_usd", "agent_seconds"}
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert manifest["settings"]["pricing"]["version"] == load_price_table().version
+    assert len(manifest["settings"]["pricing"]["sha256"]) == 64
 
     report = home / "reports" / f"{run_dir.name}.html"
     html = report.read_text()
@@ -142,3 +150,106 @@ def test_drift_needs_transcript_proof(simulated_project: Path) -> None:
         loaded, load_suite(loaded), _EchoingRunner(), "good", "bad", max_batches=1
     )
     assert outcome.verdict is not None
+
+
+class _ClaimingRunner:
+    """Writes a transcript per trial: `good` tests before claiming, `bad` claims without testing."""
+
+    def describe(self) -> dict[str, Any]:
+        return {"kind": "fake"}
+
+    def run_batch(self, request: BatchRequest) -> list[TrialRecord]:
+        out = []
+        for t in request.tasks:
+            for p in request.pins:
+                rel = Path("harbor") / f"batch-{request.batch:03d}" / f"{t.name}__{p}"
+                steps: list[dict[str, Any]] = [
+                    {
+                        "step_id": 1,
+                        "source": "agent",
+                        "message": "",
+                        "tool_calls": [
+                            {"tool_call_id": "e", "function_name": "Edit", "arguments": {}}
+                        ],
+                    }
+                ]
+                if p == "good":
+                    steps.append(
+                        {
+                            "step_id": 2,
+                            "source": "agent",
+                            "message": "",
+                            "tool_calls": [
+                                {
+                                    "tool_call_id": "t",
+                                    "function_name": "Bash",
+                                    "arguments": {"command": "pytest -q | tail -3"},
+                                }
+                            ],
+                            "observation": {
+                                "results": [{"source_call_id": "t", "content": "3 passed in 0.1s"}]
+                            },
+                        }
+                    )
+                steps.append({"step_id": 3, "source": "agent", "message": "All tests pass."})
+                agent_dir = request.bundle_dir / rel / "agent"
+                agent_dir.mkdir(parents=True)
+                (agent_dir / "trajectory.json").write_text(json.dumps({"steps": steps}))
+                rec = record(task=t.name, pin=p, batch=request.batch, name=f"{t.name}__{p}")
+                out.append(
+                    rec.model_copy(
+                        update={
+                            "trial_dir": rel.as_posix(),
+                            "claim_check": check_trial(request.bundle_dir / rel),
+                        }
+                    )
+                )
+        return out
+
+
+def test_false_success_reaches_verdict_report_index_and_cli(simulated_project: Path) -> None:
+    loaded = load_config(simulated_project)
+    outcome = run_compare(
+        loaded, load_suite(loaded), _ClaimingRunner(), "good", "bad", max_batches=1
+    )
+    verdict = outcome.verdict
+    assert verdict is not None
+    assert (verdict.baseline.checked, verdict.baseline.claims, verdict.baseline.false_success) == (
+        6,
+        6,
+        0,
+    )
+    assert (verdict.candidate.claims, verdict.candidate.false_success) == (6, 6)
+
+    html = render_report(outcome.bundle, simulated_project / "r.html").read_text()
+    assert "false success" in html
+    assert "no test run after last edit" in html
+
+    index = RunIndex(simulated_project / ".canary" / "index.db")
+    with index._connect() as db:
+        rows = db.execute(
+            "SELECT pin, claim_check, COUNT(*) FROM trials GROUP BY 1, 2 ORDER BY 1"
+        ).fetchall()
+    assert [tuple(r) for r in rows] == [("bad", "false_success", 6), ("good", "supported", 6)]
+
+    result = _invoke("claims", outcome.bundle.run_id, "-c", str(simulated_project))
+    assert result.exit_code == 0
+    assert "12 transcripts checked" in result.output
+    assert "false success 6" in result.output
+    assert "no_test_run_after_last_edit" in result.output
+
+
+def test_warmup_batches_are_left_out_of_cost_metrics_only(simulated_project: Path) -> None:
+    toml = simulated_project / "canary.toml"
+    toml.write_text(toml.read_text().replace("[stats]", "[stats]\nwarmup_batches = 1"))
+    loaded = load_config(simulated_project)
+    cfg = loaded.config
+    runner = SimulatedRunner(
+        cfg.runner.simulated, seed=cfg.stats.seed, task_spread=cfg.runner.simulated_task_spread
+    )
+    verdict = run_compare(loaded, load_suite(loaded), runner, "good", "same", max_batches=3).verdict
+    assert verdict is not None
+    assert verdict.metrics_from_batch == 1
+    assert verdict.n_pairs == 36  # 6 tasks x 2 attempts x 3 batches: pass rate uses every batch
+    cost = next(m for m in verdict.metrics if m.metric == "cost_usd")
+    assert cost.n_baseline == 24  # batches 1 and 2 only

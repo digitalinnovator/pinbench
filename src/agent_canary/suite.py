@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -56,11 +57,28 @@ def load_suite(loaded: LoadedConfig) -> Suite:
         found = {name: found[name] for name in cfg.include}
     if not found:
         raise SuiteError(f"no Harbor tasks (*/{TASK_MARKER}) under {tasks_dir}")
+    for name, path in found.items():
+        _refuse_multi_step(name, path / TASK_MARKER)
     tasks = tuple(
         TaskRef(name=name, path=path, digest=sha256_tree(path))
         for name, path in sorted(found.items())
     )
     return Suite(name=cfg.name, root=tasks_dir, tasks=tasks, git=_git_info(tasks_dir))
+
+
+def _refuse_multi_step(name: str, task_toml: Path) -> None:
+    """A multi-step Harbor task runs the harness once per step, each with a fresh spend cap and
+    timeout, so one per-trial cap does not bound it and its cost is not read correctly either."""
+    try:
+        config = tomllib.loads(task_toml.read_text())
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        raise SuiteError(f"task {name!r}: cannot read {TASK_MARKER}: {exc}") from None
+    if config.get("steps"):
+        raise SuiteError(
+            f"task {name!r} is a multi-step Harbor task ([[steps]]). Each step runs the harness "
+            "again with its own spend cap, which the canary's per-trial budget does not cover. "
+            "Multi-step tasks are not supported"
+        )
 
 
 def _git_info(path: Path) -> GitInfo | None:

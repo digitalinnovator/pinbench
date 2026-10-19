@@ -1,6 +1,6 @@
 # C4 level 2: containers
 
-v0.1 ships as one Python process (the `canary` CLI) plus the separately locked Harbor tool environment. The boxes inside the canary are modules, not services. They are drawn separately because each has its own contract and its own ADR. Items marked *planned* are in the v0.1 scope but are not built yet.
+v0.1 ships as one Python process (the `canary` CLI) plus the separately locked Harbor tool environment. The boxes inside the canary are modules, not services. They are drawn separately because each has its own contract and its own ADR.
 
 ```mermaid
 C4Container
@@ -11,13 +11,15 @@ C4Container
     System_Ext(suite, "Task suite repo", "Harbor tasks + canary.toml")
 
     System_Boundary(c, "Agent Canary") {
-        Container(cli, "CLI", "Python, Typer", "validate, run, compare, report, verify, index")
+        Container(cli, "CLI", "Python, Typer", "validate, run, compare, watch, alert, ledger, report, claims, verify, index")
         Container(orch, "Compare orchestrator", "Python", "Batch loop: run both arms, update statistics, check budget, decide to stop")
-        Container(stats, "Statistics engine", "NumPy, SciPy", "Mixture e-process on discordant pairs; cluster bootstrap on cost and latency (ADR-0003)")
+        Container(stats, "Statistics engine", "NumPy, SciPy", "Mixture e-process on discordant pairs; cluster bootstrap on cost, tokens and latency (ADR-0003)")
+        Container(ledger, "Campaign ledger", "Python, JSON lines", "Lifetime spending limit per credit pool; reserves each batch's worst case, then settles (ADR-0009)")
+        Container(pricing, "Pricing", "Python, TOML", "Re-prices each trial from transcript token usage with a dated price table (ADR-0005)")
         Container(runner, "Runner adapter", "Python", "Runner protocol; HarborRunner writes JobConfig YAML, runs harbor, parses result.json; SimulatedRunner for tests and power analysis")
-        Container(verifier, "Verifier-lite (planned)", "Python", "Flags false success from ATIF transcripts")
-        Container(trigger, "Release watcher (planned)", "Python", "Detects new harness versions")
-        Container(alert, "Alerter (planned)", "Python", "Slack and GitHub Issues")
+        Container(verifier, "Verifier-lite", "Python", "Checks 'tests pass' claims against test-runner output in ATIF transcripts (ADR-0007)")
+        Container(trigger, "Release watcher", "Python", "Reads npm dist-tags; derives a candidate pin for a new harness version (ADR-0008)")
+        Container(alert, "Alerter", "Python", "Slack webhook and GitHub issue, sent after the bundle is sealed (ADR-0008)")
         Container(report, "Report renderer", "Jinja2", "Static HTML with per-task drill-down")
         ContainerDb(bundles, "Run bundles", "Filesystem", "Immutable, checksummed system of record (ADR-0004)")
         ContainerDb(index, "Run index", "SQLite", "Derived, rebuildable query index")
@@ -35,9 +37,13 @@ C4Container
     Rel(orch, bundles, "Writes and seals")
     Rel(orch, index, "Ingests")
     Rel(report, bundles, "Reads")
-    Rel(trigger, orch, "Starts compare (planned)")
-    Rel(orch, alert, "On regression (planned)")
-    Rel(verifier, bundles, "Scores transcripts (planned)")
+    Rel(ci, trigger, "canary watch --run, on a schedule")
+    Rel(trigger, orch, "Starts compare for a new release")
+    Rel(alert, bundles, "Reads verdict")
+    Rel(runner, verifier, "Scores each transcript")
+    Rel(runner, pricing, "Prices each transcript")
+    Rel(orch, ledger, "Reserves before each batch, settles after")
+    Rel(verifier, bundles, "Re-scores sealed transcripts (canary claims)")
 
     UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```
@@ -73,9 +79,12 @@ erDiagram
         int input_tokens
         int cache_tokens
         int output_tokens
-        float cost_usd
+        int cache_write_tokens
+        float cost_usd "re-priced from tokens (ADR-0005)"
+        float reported_cost_usd "the harness's own estimate"
         float agent_seconds
         string installed_version
+        string claim_check "no_claim | supported | false_success | unverifiable"
     }
     RUN {
         string run_id

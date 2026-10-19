@@ -1,0 +1,30 @@
+schema_version = "1.4"
+
+[task]
+name = "agent-canary/split-toplevel"
+version = "1.1.0"
+authors = [{ name = "Muhammad Amar Sohail" }]
+keywords = ["python", "parsing", "brackets", "quoting"]
+
+[metadata]
+difficulty = "medium"
+category = "programming"
+tags = ["python", "parsing", "validation"]
+
+[verifier]
+timeout_sec = 120.0
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+mcp_servers = []
+
+[verifier.env]
+
+[solution.env]
