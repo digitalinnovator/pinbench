@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "run_id": "20261020T202808Z-compare-b725f2",
+  "kind": "compare",
+  "created_at": "2026-10-20T20:28:08.979596Z",
+  "canary_version": "0.1.0.dev0",
+  "runner": {
+    "kind": "harbor",
+    "harbor_version": "0.23.0",
+    "harbor_command": [
+      "uv",
+      "run",
+      "--project",
+      "../../tools/harbor",
+      "--frozen",
+      "harbor"
+    ],
+    "environment": "docker",
+    "n_concurrent": 4
+  },
+  "suite_name": "benchmark-codex-prescreen",
+  "suite_commit": "c14e90841c42db8fa96df5fe46d30db35b505686",
+  "suite_dirty": false,
+  "tasks": [
+    {
+      "name": "business-days",
+      "digest": "5323823fbbe35ba8b0df49a068a64e1efc5f6c7c37dba02324e7e91df2037559"
+    },
+    {
+      "name": "cli-config-precedence",
+      "digest": "6312d74aa6d8a84139a4511de1f46e92bd9b15f63b98beba609d6bef10f0a666"
+    },
+    {
+      "name": "cli-grep-lite",
+      "digest": "0dbe532183d4844213f8d932fe20b03ec27384c5b3c763631fd990809279b87e"
+    },
+    {
+      "name": "cli-short-flags",
+      "digest": "3da4bd67659742587de0c93e56cb4bdb5e12fc4b51298152d9a89489f41ff43c"
+    },
+    {
+      "name": "coin-change-limited",
+      "digest": "22fed427bc507cc4cce2299daadbf73cbf7de46f06c28e32a000904f326f6b42"
+    },
+    {
+      "name": "dedupe-contacts",
+      "digest": "4a5e10ee60f1c10f490725169034116d4723e9367200e6638b166738f119d4fc"
+    },
+    {
+      "name": "dependency-order",
+      "digest": "50eed187b9692e06d5f9ecf604e6d8c5bb5e0c577f9eb1219bffb4186e1f2696"
+    },
+    {
+      "name": "env-file-parser",
+      "digest": "cd1f0b6bf92d9357831f03df3fa8a223aba58f9affd8e575998aac6e42983c3e"
+    },
+    {
+      "name": "extract-registry-class",
+      "digest": "78a29c484861e90b7e3fc5fe27612fc06f5ebaab12bb506431154b6da6d13132"
+    },
+    {
+      "name": "format-number",
+      "digest": "9e23e9a0cada5deeb7ea83ff893de08b691bbbabbdd844854b6c32f1bfbdb90e"
+    },
+    {
+      "name": "glob-match",
+      "digest": "46db31a1b3d546bfac3da38be061d0ec8d39d4cb4c1ff0bd1712cfa6e54754bd"
+    },
+    {
+      "name": "human-bytes",
+      "digest": "6dff2209a56ee580c4c6e23022cff3c4d6ddf81d001a456dfc307f81181badc6"
+    },
+    {
+      "name": "interval-set",
+      "digest": "f9d4261a45b063c6dd5e3cdeabde91644cd1cc8ec235bfc6e91c78c594ef24ff"
+    },
+    {
+      "name": "invoice-rounding",
+      "digest": "5151634a023476ebafcbd1b6af9f68bc170e407277160f616e085e4d0c87df81"
+    },
+    {
+      "name": "iso-week-report",
+      "digest": "44525d579366350fb9852fb4d8498041be99f172d904744f16f112614e387e5e"
+    },
+    {
+      "name": "log-window-count",
+      "digest": "8bcc4028202a6eb780f4b5bde3d7ce3adc2d9bc36bc13a26de2aef4eeef6255b"
+    },
+    {
+      "name": "lru-ttl-cache",
+      "digest": "654571ef5b0e5cf99da51a34210c1e1f4a1b1451ced5eb2f26a8e2cd4ea654f8"
+    },
+    {
+      "name": "money-split",
+      "digest": "6e66e3676d9bea0033fd254e565c4760349085699008566cf67f378c9ce8c15a"
+    },
+    {
+      "name": "monthly-recurrence",
+      "digest": "5d8d4efc3f2521542bdd2b5f29cfe417b5ff93332b40f694371828d3ee285d7d"
+    },
+    {
+      "name": "order-state-machine",
+      "digest": "f7e99e79c15a03b16a9a5ef714d80486d3e4d7eda61dd314d10f78391190870b"
+    },
+    {
+      "name": "pagination-cursor",
+      "digest": "82af549362b0668f3113baac790761b6ccaa9be2c7acd76cee5293d6dbf70dc3"
+    },
+    {
+      "name": "path-normalize",
+      "digest": "e8d3ce3096fe8c813657433c3ce2cffa4f42c30e4c7fcd6efa046eb0cb305c78"
+    },
+    {
+      "name": "priority-queue-stable",
+      "digest": "92763d5db21c6e03904979fcba2b26287fe57b6719ce9af8f9fce258b2b8b2a5"
+    },
+    {
+      "name": "query-canonicalize",
+      "digest": "6c6f8831e5e1bbacc6f59c6fe41a8482502b5db30f314f17b3a2bec4c80b6393"
+    },
+    {
+      "name": "range-list",
+      "digest": "0045a840e33df356b94991c033fc8b156da48540c804ce937b4504ff8ab53f1f"
+    },
+    {
+      "name": "split-toplevel",
+      "digest": "d6b139567282ac66519a820853bad889bda611cb95d625c1e65de91ca2837b64"
+    },
+    {
+      "name": "strip-comments",
+      "digest": "40116d8450f2d1fac7946286207c932ecc009c790a61a57c0d01dd413a96b893"
+    },
+    {
+      "name": "time-range-parse",
+      "digest": "2ca8d03020e130e5d286b4a69fce2b71553565430e7bc9a297d6e72b47ca7187"
+    },
+    {
+      "name": "title-case-style",
+      "digest": "ef7bccc789d9471bb0b49edc039900ebd35df66bef26437b8cff1e0c99619486"
+    },
+    {
+      "name": "unify-money-format",
+      "digest": "e4842995dfebe1765f3cee1704d36c01a6db988bf6d51c28032da0d9ef57e456"
+    },
+    {
+      "name": "version-range-match",
+      "digest": "09e43d6314b6080f80d802e93be15f0daf0b75ede27e10ecc328675b76d343d3"
+    },
+    {
+      "name": "wrap-quoted",
+      "digest": "e158a00be1af9d2123d94c6cd31175fdd17b5c4fe69d1cc792a1de81cec193fd"
+    }
+  ],
+  "pins": [
+    {
+      "name": "codex-high",
+      "fingerprint": "846a0ee02e1333d35af171728a581ad0732088cb2609c0b116e54c20e7d818ca",
+      "spec": {
+        "harness": "codex",
+        "version": "0.163.0",
+        "model": "openai/gpt-6-luna",
+        "options": {
+          "reasoning_effort": "high",
+          "web_search": "disabled",
+          "config": {
+            "service_tier": "default"
+          }
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": 300.0,
+        "reserve_usd": 0.05
+      }
+    },
+    {
+      "name": "codex-low",
+      "fingerprint": "5e59a0b1e25a78f3eec8c3c0b26823ed871668b115b987b48fcb3e8bda95606a",
+      "spec": {
+        "harness": "codex",
+        "version": "0.163.0",
+        "model": "openai/gpt-6-luna",
+        "options": {
+          "reasoning_effort": "low",
+          "web_search": "disabled",
+          "config": {
+            "service_tier": "default"
+          }
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": 300.0,
+        "reserve_usd": 0.05
+      }
+    }
+  ],
+  "baseline": "codex-high",
+  "candidate": "codex-low",
+  "continues": null,
+  "settings": {
+    "stats": {
+      "alpha": 0.05,
+      "alternative": "less",
+      "mixture_max": 0.8,
+      "pass_threshold": 1.0,
+      "bootstrap_resamples": 2000,
+      "confidence": 0.95,
+      "cost_threshold": 0.1,
+      "warmup_batches": 1,
+      "futility_after_batches": null,
+      "futility_min_net_regressions": 4,
+      "seed": 20260927
+    },
+    "budget": {
+      "max_usd": 7.0,
+      "max_batches": 1,
+      "attempts_per_batch": 2,
+      "inflight_allowance_usd": 0.05
+    },
+    "pricing": {
+      "version": "2026-10-18",
+      "verified": "2026-10-18",
+      "sources": {
+        "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "openai": "https://developers.openai.com/api/docs/pricing"
+      },
+      "sha256": "a39dbd7b75c3b63ceabd92a69fbba6adc02961c96c8466dd6844478447d74f52"
+    }
+  }
+}

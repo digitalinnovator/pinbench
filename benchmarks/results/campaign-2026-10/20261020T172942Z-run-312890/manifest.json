@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "run_id": "20261020T172942Z-run-312890",
+  "kind": "run",
+  "created_at": "2026-10-20T17:29:42.753199Z",
+  "canary_version": "0.1.0.dev0",
+  "runner": {
+    "kind": "harbor",
+    "harbor_version": "0.23.0",
+    "harbor_command": [
+      "uv",
+      "run",
+      "--project",
+      "../../tools/harbor",
+      "--frozen",
+      "harbor"
+    ],
+    "environment": "docker",
+    "n_concurrent": 4
+  },
+  "suite_name": "benchmark",
+  "suite_commit": "a00f706e60bc48f0e6673f8927d0a4338db3114e",
+  "suite_dirty": false,
+  "tasks": [
+    {
+      "name": "cli-grep-lite",
+      "digest": "9eaaffbc47fe49e33435fa4407c41ea906291fa2c77c126e8c597ad67e04c3b0"
+    },
+    {
+      "name": "cli-short-flags",
+      "digest": "531477cea4ba33a178bad9fe43edc3bb7724e2c91db1eec1c64c497812dbcfa1"
+    },
+    {
+      "name": "coin-change-limited",
+      "digest": "a3b3ff3d92ed8691fd3e4384c9b5d1b160d7d2300699d21bb1ebd244eb2d972f"
+    },
+    {
+      "name": "dedupe-contacts",
+      "digest": "01f0c137544434534856000732f33b81fcb322319473b6fa2cfc0e743bede83d"
+    },
+    {
+      "name": "dependency-order",
+      "digest": "2c812308f809f11d9cf51416f81515290875095a7da6b907ca1e514c0ac5fe37"
+    },
+    {
+      "name": "env-file-parser",
+      "digest": "99a88ce8870c937c26294208160e1a84028b36f9d94a500762fe9aac6e131cf0"
+    },
+    {
+      "name": "extract-registry-class",
+      "digest": "c644b1dab4afa522385d616a3d65c6ffb1ae99a8a55887eacad76156ea27741f"
+    },
+    {
+      "name": "format-number",
+      "digest": "2da640c7a80e58cd18a8aef4f1ab2f7474e019aa3e774879011dc5939069df08"
+    },
+    {
+      "name": "glob-match",
+      "digest": "5d8f81d9e64c4dd48df9285983834244f8e7d97642fb6f579a83f37cc3035be2"
+    },
+    {
+      "name": "interval-set",
+      "digest": "c8a8bb98ecc926c1ce390f9260e8ab178003577e0c69a871d0a795d7125e17a8"
+    },
+    {
+      "name": "invoice-rounding",
+      "digest": "62731879e5cf18d634bf3e2b248717889c885e5120a4b3cdb070e2214be8dc23"
+    },
+    {
+      "name": "iso-week-report",
+      "digest": "b532e7b33e7bead1a92fe87737f9a2d4c04d406e592a17688d2013a9bce33b68"
+    },
+    {
+      "name": "money-split",
+      "digest": "9e5c5db9db41293c09da19c6d51bf6a4e3b6e9625a6071ea52df15311d97fa7f"
+    },
+    {
+      "name": "order-state-machine",
+      "digest": "f22f34cf3fd3329e36df469f192c215c338dd7506fec75d44dc1c65f16481802"
+    },
+    {
+      "name": "strip-comments",
+      "digest": "aaa0e39d35042498df9cdee13d83d7f2f9eeea47277df60a394edeca628928a4"
+    },
+    {
+      "name": "title-case-style",
+      "digest": "52ccbf94d4f193129b20f23aedf042de934b7c78aaca61f8fed2c8c47f1e39c7"
+    },
+    {
+      "name": "version-range-match",
+      "digest": "14df587b01309661521fde5c8c245f4ec0e69c8fb70323bcc43cf86f4687bfac"
+    },
+    {
+      "name": "wrap-quoted",
+      "digest": "d8da5a3252689f3d64d1aff0e94e2a69091bab9410b8e62bc3a6e2da1583bcda"
+    }
+  ],
+  "pins": [
+    {
+      "name": "s5-high-calibrate",
+      "fingerprint": "bc989c943fb273d968556fba7bef63d8c0853af553107e9b517742eab2a3288e",
+      "spec": {
+        "harness": "claude-code",
+        "version": "2.1.283",
+        "model": "anthropic/claude-sonnet-5",
+        "options": {
+          "reasoning_effort": "high",
+          "max_budget_usd": "0.40",
+          "max_turns": 20
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": null,
+        "reserve_usd": null
+      }
+    }
+  ],
+  "baseline": null,
+  "candidate": null,
+  "settings": {
+    "stats": {
+      "alpha": 0.05,
+      "alternative": "less",
+      "mixture_max": 0.8,
+      "pass_threshold": 1.0,
+      "bootstrap_resamples": 2000,
+      "confidence": 0.95,
+      "cost_threshold": 0.1,
+      "warmup_batches": 1,
+      "futility_after_batches": 3,
+      "futility_min_net_regressions": 4,
+      "seed": 20260927
+    },
+    "budget": {
+      "max_usd": 11.0,
+      "max_batches": 5,
+      "attempts_per_batch": 1,
+      "inflight_allowance_usd": 0.05
+    },
+    "pricing": {
+      "version": "2026-10-18",
+      "verified": "2026-10-18",
+      "sources": {
+        "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "openai": "https://developers.openai.com/api/docs/pricing"
+      },
+      "sha256": "a39dbd7b75c3b63ceabd92a69fbba6adc02961c96c8466dd6844478447d74f52"
+    }
+  }
+}

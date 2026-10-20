@@ -55,6 +55,10 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "N"]
 
+[tool.ruff.lint.per-file-ignores]
+# The report writes typeset text on purpose: ×, – and α.
+"benchmarks/campaign_report.py" = ["RUF001"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

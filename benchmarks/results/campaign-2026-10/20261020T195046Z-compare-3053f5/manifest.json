@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "run_id": "20261020T195046Z-compare-3053f5",
+  "kind": "compare",
+  "created_at": "2026-10-20T19:50:46.004300Z",
+  "canary_version": "0.1.0.dev0",
+  "runner": {
+    "kind": "harbor",
+    "harbor_version": "0.23.0",
+    "harbor_command": [
+      "uv",
+      "run",
+      "--project",
+      "../../tools/harbor",
+      "--frozen",
+      "harbor"
+    ],
+    "environment": "docker",
+    "n_concurrent": 4
+  },
+  "suite_name": "benchmark",
+  "suite_commit": "8f900ad1cf18e04666054e389ef7ed371ff2022a",
+  "suite_dirty": false,
+  "tasks": [
+    {
+      "name": "cli-short-flags",
+      "digest": "531477cea4ba33a178bad9fe43edc3bb7724e2c91db1eec1c64c497812dbcfa1"
+    },
+    {
+      "name": "dedupe-contacts",
+      "digest": "01f0c137544434534856000732f33b81fcb322319473b6fa2cfc0e743bede83d"
+    },
+    {
+      "name": "format-number",
+      "digest": "2da640c7a80e58cd18a8aef4f1ab2f7474e019aa3e774879011dc5939069df08"
+    },
+    {
+      "name": "glob-match",
+      "digest": "5d8f81d9e64c4dd48df9285983834244f8e7d97642fb6f579a83f37cc3035be2"
+    },
+    {
+      "name": "invoice-rounding",
+      "digest": "62731879e5cf18d634bf3e2b248717889c885e5120a4b3cdb070e2214be8dc23"
+    },
+    {
+      "name": "iso-week-report",
+      "digest": "b532e7b33e7bead1a92fe87737f9a2d4c04d406e592a17688d2013a9bce33b68"
+    },
+    {
+      "name": "money-split",
+      "digest": "9e5c5db9db41293c09da19c6d51bf6a4e3b6e9625a6071ea52df15311d97fa7f"
+    },
+    {
+      "name": "order-state-machine",
+      "digest": "f22f34cf3fd3329e36df469f192c215c338dd7506fec75d44dc1c65f16481802"
+    },
+    {
+      "name": "strip-comments",
+      "digest": "aaa0e39d35042498df9cdee13d83d7f2f9eeea47277df60a394edeca628928a4"
+    },
+    {
+      "name": "version-range-match",
+      "digest": "14df587b01309661521fde5c8c245f4ec0e69c8fb70323bcc43cf86f4687bfac"
+    }
+  ],
+  "pins": [
+    {
+      "name": "s5-high",
+      "fingerprint": "e37af06a4b27e12753d8403d1d706c3ee13ca93bb24af8383a1ffb118b320f5c",
+      "spec": {
+        "harness": "claude-code",
+        "version": "2.1.283",
+        "model": "anthropic/claude-sonnet-5",
+        "options": {
+          "reasoning_effort": "high",
+          "max_budget_usd": "0.30",
+          "max_turns": 20
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": null,
+        "reserve_usd": null
+      }
+    },
+    {
+      "name": "s5-low",
+      "fingerprint": "14b125c3948c620e3ad07267e2af5812b6e38bbb035ba6b6e17457179668063f",
+      "spec": {
+        "harness": "claude-code",
+        "version": "2.1.283",
+        "model": "anthropic/claude-sonnet-5",
+        "options": {
+          "reasoning_effort": "low",
+          "max_budget_usd": "0.30",
+          "max_turns": 20
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": null,
+        "reserve_usd": null
+      }
+    }
+  ],
+  "baseline": "s5-high",
+  "candidate": "s5-low",
+  "continues": "20261020T174900Z-compare-98c8b5",
+  "settings": {
+    "stats": {
+      "alpha": 0.05,
+      "alternative": "less",
+      "mixture_max": 0.8,
+      "pass_threshold": 1.0,
+      "bootstrap_resamples": 2000,
+      "confidence": 0.95,
+      "cost_threshold": 0.1,
+      "warmup_batches": 1,
+      "futility_after_batches": 3,
+      "futility_min_net_regressions": 4,
+      "seed": 20260927
+    },
+    "budget": {
+      "max_usd": 12.0,
+      "max_batches": 5,
+      "attempts_per_batch": 1,
+      "inflight_allowance_usd": 0.05
+    },
+    "pricing": {
+      "version": "2026-10-18",
+      "verified": "2026-10-18",
+      "sources": {
+        "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "openai": "https://developers.openai.com/api/docs/pricing"
+      },
+      "sha256": "a39dbd7b75c3b63ceabd92a69fbba6adc02961c96c8466dd6844478447d74f52"
+    }
+  }
+}

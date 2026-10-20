@@ -137,3 +137,33 @@ The plan's leftover rule (fixed before any spend): if the headline ends inconclu
 **What the headline can honestly say:** on 10 tasks and 120 trials, the canary's anytime-valid test did not flag a reasoning-effort cut on Claude Code with Sonnet 5 (E = 11.3 against 20), although pass rate fell 18 points and a one-look test at the pre-registered sample would have flagged it. Cost, tokens and latency fell clearly. At the observed rates, about 4 more batches (10 in all, about $22) would flag it 80% of the time (simulated); that does not fit this budget.
 
 **Total after step 7: Anthropic $16.73 of $22.50.**
+
+## Step 6: the caching-off cost check, 2026-10-21
+
+`canary compare h45 h45-no-cache -c examples/benchmark-suite/cache-check.toml`: Claude Code 2.1.283 on Haiku 4.5, the 6 cheapest benchmark tasks, one batch; the candidate sets `DISABLE_PROMPT_CACHING=1`, a stand-in for the postmortem's thinking-block caching bug. **Spend: $1.75** (expected $1.30; caps $0.20 and $0.50 so that neither arm's cost was cut off; no cap was hit).
+
+| Metric | Caching off / on | 95% interval | |
+|---|---|---|---|
+| Cost | ×2.63 | 1.75–4.10 | **flagged** |
+| Cache reads and writes | ×0 | — | the knob took effect |
+| Input tokens | ×0.62 | 0.41–1.00 | |
+| Output tokens | ×0.85 | 0.56–1.47 | |
+| Agent time | ×0.73 | 0.51–1.09 | |
+
+- **The canary flagged the caching regression on cost after one batch of 6 tasks.** Every trial with caching off paid full input price on every request: $0.16–0.32 per trial against $0.03–0.14 with caching on.
+- **Pass rate carried no information here, as expected for a cost regression:** Haiku 4.5 solved 0 of 6 and 1 of 6 of these tasks, which were tuned for Sonnet 5.
+- **Six tasks make the interval too narrow to trust** in its exact bounds (the report warns below 20 tasks); the direction and the size of the effect are not in doubt.
+
+**Total after step 6: Anthropic $18.48 of $22.50.** The Anthropic part of the plan is complete, within the owner's $20 target.
+
+## Step C1: Codex headroom check (OpenAI pool), 2026-10-21
+
+Codex 0.163.0 on `gpt-6-luna`, reasoning effort high against low, all 32 candidate tasks, 2 attempts each, one batch (`examples/benchmark-suite-codex/prescreen.toml`). Calibration only: these trials choose Codex tasks and never enter a test. **Spend: $0.48** (expected about $0.65; reserved $6.40 at $0.05 per trial).
+
+- **Codex solves almost everything at either effort:** 63/64 (98%) at high, 60/64 (94%) at low. The discordant pairs went 4 to 1 against low effort; E = 1.9.
+- **The suite has no headroom for this stack.** The tasks were tuned against Sonnet 5 in Claude Code. `gpt-6-luna` in Codex passed all five tasks that no Sonnet 5 attempt ever passed (`human-bytes`, `log-window-count`, `monthly-recurrence`, `pagination-cursor`, `range-list`). That also answers a fairness worry about those five: a model can solve them as written.
+- **Low effort costs much less for almost the same result:** cost ×0.58 (0.54–0.63), output ×0.37 (0.33–0.42), agent time ×0.64 (0.60–0.69). At $0.0028 a trial, low effort is the better buy on these tasks.
+- **The verifier read Codex's code-mode transcripts on real data:** 54 "tests pass" claims, 2 flagged as false success (1 per arm).
+- **Gate:** low effort shows no clear drop, so the planned replicated Codex comparison (C2) is not run on this suite. Nothing more is spent on it.
+
+**Total after step C1: OpenAI $0.59 of $9.00.**

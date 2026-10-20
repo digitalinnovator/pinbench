@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "run_id": "20261020T173356Z-run-8f24e9",
+  "kind": "run",
+  "created_at": "2026-10-20T17:33:56.536483Z",
+  "canary_version": "0.1.0.dev0",
+  "runner": {
+    "kind": "harbor",
+    "harbor_version": "0.23.0",
+    "harbor_command": [
+      "uv",
+      "run",
+      "--project",
+      "../../tools/harbor",
+      "--frozen",
+      "harbor"
+    ],
+    "environment": "docker",
+    "n_concurrent": 1
+  },
+  "suite_name": "codex-spike",
+  "suite_commit": "a00f706e60bc48f0e6673f8927d0a4338db3114e",
+  "suite_dirty": true,
+  "tasks": [
+    {
+      "name": "fix-pagination",
+      "digest": "4944f118dd0a4d9c7c8f697991824e4fa2e3cc5a7b488e436eac84e5a1aa90ec"
+    },
+    {
+      "name": "parse-duration",
+      "digest": "2d801ec155bfabafab78b0ae614d0f5ab3b17a8ae25b769abc9718c7cefb2f4b"
+    },
+    {
+      "name": "slugify",
+      "digest": "cb345d6b1fe9a5993286f628b5026a747a1a9caf486d916a600f74481397ccfc"
+    }
+  ],
+  "pins": [
+    {
+      "name": "codex-low",
+      "fingerprint": "436071d8998899c1d7efd4b6a338ec9f56a8928746c5e040cce570a219a80cbd",
+      "spec": {
+        "harness": "codex",
+        "version": "0.163.0",
+        "model": "openai/gpt-6-luna",
+        "options": {
+          "reasoning_effort": "low",
+          "web_search": "disabled",
+          "config": {
+            "service_tier": "default"
+          }
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": 120.0,
+        "reserve_usd": 0.3
+      }
+    }
+  ],
+  "baseline": null,
+  "candidate": null,
+  "settings": {
+    "stats": {
+      "alpha": 0.05,
+      "alternative": "less",
+      "mixture_max": 0.8,
+      "pass_threshold": 1.0,
+      "bootstrap_resamples": 2000,
+      "confidence": 0.95,
+      "cost_threshold": 0.1,
+      "warmup_batches": 0,
+      "futility_after_batches": null,
+      "futility_min_net_regressions": 4,
+      "seed": 20260927
+    },
+    "budget": {
+      "max_usd": 1.0,
+      "max_batches": 1,
+      "attempts_per_batch": 1,
+      "inflight_allowance_usd": 0.05
+    },
+    "pricing": {
+      "version": "2026-10-18",
+      "verified": "2026-10-18",
+      "sources": {
+        "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "openai": "https://developers.openai.com/api/docs/pricing"
+      },
+      "sha256": "a39dbd7b75c3b63ceabd92a69fbba6adc02961c96c8466dd6844478447d74f52"
+    }
+  }
+}

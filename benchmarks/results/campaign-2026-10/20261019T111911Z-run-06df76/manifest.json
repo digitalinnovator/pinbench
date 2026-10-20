@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "run_id": "20261019T111911Z-run-06df76",
+  "kind": "run",
+  "created_at": "2026-10-19T11:19:11.863622Z",
+  "canary_version": "0.1.0.dev0",
+  "runner": {
+    "kind": "harbor",
+    "harbor_version": "0.23.0",
+    "harbor_command": [
+      "uv",
+      "run",
+      "--project",
+      "../../tools/harbor",
+      "--frozen",
+      "harbor"
+    ],
+    "environment": "docker",
+    "n_concurrent": 1
+  },
+  "suite_name": "smoke",
+  "suite_commit": "a00f706e60bc48f0e6673f8927d0a4338db3114e",
+  "suite_dirty": false,
+  "tasks": [
+    {
+      "name": "parse-duration",
+      "digest": "000c0636ce8307e28337e17942c886cae0932993700e5831eb7d272006c9deb2"
+    }
+  ],
+  "pins": [
+    {
+      "name": "h45-v2185",
+      "fingerprint": "7d28cb23edd3e9a5e0cf5f8cbe868878b7cb875865b6d2329699e6923f70f1f3",
+      "spec": {
+        "harness": "claude-code",
+        "version": "2.1.85",
+        "model": "anthropic/claude-haiku-4-5",
+        "options": {
+          "max_budget_usd": "0.08",
+          "max_turns": 20
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": null,
+        "reserve_usd": null
+      }
+    }
+  ],
+  "baseline": null,
+  "candidate": null,
+  "settings": {
+    "stats": {
+      "alpha": 0.05,
+      "alternative": "less",
+      "mixture_max": 0.8,
+      "pass_threshold": 1.0,
+      "bootstrap_resamples": 2000,
+      "confidence": 0.95,
+      "cost_threshold": 0.1,
+      "warmup_batches": 0,
+      "futility_after_batches": null,
+      "futility_min_net_regressions": 4,
+      "seed": 20260927
+    },
+    "budget": {
+      "max_usd": 10.0,
+      "max_batches": 10,
+      "attempts_per_batch": 1,
+      "inflight_allowance_usd": 0.05
+    },
+    "pricing": {
+      "version": "2026-10-18",
+      "verified": "2026-10-18",
+      "sources": {
+        "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "openai": "https://developers.openai.com/api/docs/pricing"
+      },
+      "sha256": "a39dbd7b75c3b63ceabd92a69fbba6adc02961c96c8466dd6844478447d74f52"
+    }
+  }
+}

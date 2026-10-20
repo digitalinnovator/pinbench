@@ -1,0 +1,172 @@
+{
+  "decision": "inconclusive",
+  "stop_reason": "max_batches",
+  "alternative": "less",
+  "alpha": 0.05,
+  "e_value": 0.7,
+  "p_value": 1.0,
+  "batches_run": 1,
+  "spent_usd": 1.753791,
+  "cost_known": true,
+  "n_pairs": 6,
+  "n_discordant": 1,
+  "n_regress": 0,
+  "n_improve": 1,
+  "dropped_pairs": 0,
+  "baseline": {
+    "pin": "h45",
+    "n": 6,
+    "passes": 0,
+    "errors": 0,
+    "checked": 6,
+    "claims": 5,
+    "false_success": 0,
+    "cap_hits": 0
+  },
+  "candidate": {
+    "pin": "h45-no-cache",
+    "n": 6,
+    "passes": 1,
+    "errors": 0,
+    "checked": 6,
+    "claims": 5,
+    "false_success": 0,
+    "cap_hits": 0
+  },
+  "metrics": [
+    {
+      "metric": "cost_usd",
+      "baseline_mean": 0.08046437499999999,
+      "candidate_mean": 0.21183416666666668,
+      "ratio": 2.632645399490976,
+      "ci_low": 1.7497602226081714,
+      "ci_high": 4.102455096634588,
+      "n_baseline": 6,
+      "n_candidate": 6,
+      "flagged": true
+    },
+    {
+      "metric": "input_tokens",
+      "baseline_mean": 289158.8333333333,
+      "candidate_mean": 180557.5,
+      "ratio": 0.6244232552697393,
+      "ci_low": 0.4107925525076263,
+      "ci_high": 0.9974640156051701,
+      "n_baseline": 6,
+      "n_candidate": 6,
+      "flagged": false
+    },
+    {
+      "metric": "cache_read_tokens",
+      "baseline_mean": 276265.0,
+      "candidate_mean": 0.0,
+      "ratio": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_baseline": 6,
+      "n_candidate": 6,
+      "flagged": false
+    },
+    {
+      "metric": "cache_write_tokens",
+      "baseline_mean": 12806.166666666666,
+      "candidate_mean": 0.0,
+      "ratio": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_baseline": 6,
+      "n_candidate": 6,
+      "flagged": false
+    },
+    {
+      "metric": "output_tokens",
+      "baseline_mean": 7348.5,
+      "candidate_mean": 6255.333333333333,
+      "ratio": 0.8512394819804495,
+      "ci_low": 0.5604720784951633,
+      "ci_high": 1.468583010871568,
+      "n_baseline": 6,
+      "n_candidate": 6,
+      "flagged": false
+    },
+    {
+      "metric": "agent_seconds",
+      "baseline_mean": 142.78329883333333,
+      "candidate_mean": 104.72360183333335,
+      "ratio": 0.7334443362005109,
+      "ci_low": 0.505273676404531,
+      "ci_high": 1.0878473099852348,
+      "n_baseline": 6,
+      "n_candidate": 6,
+      "flagged": false
+    }
+  ],
+  "metrics_from_batch": 0,
+  "per_task": [
+    {
+      "task": "cli-grep-lite",
+      "baseline_passes": 0,
+      "baseline_n": 1,
+      "candidate_passes": 0,
+      "candidate_n": 1,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "dedupe-contacts",
+      "baseline_passes": 0,
+      "baseline_n": 1,
+      "candidate_passes": 0,
+      "candidate_n": 1,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "format-number",
+      "baseline_passes": 0,
+      "baseline_n": 1,
+      "candidate_passes": 0,
+      "candidate_n": 1,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "invoice-rounding",
+      "baseline_passes": 0,
+      "baseline_n": 1,
+      "candidate_passes": 0,
+      "candidate_n": 1,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "strip-comments",
+      "baseline_passes": 0,
+      "baseline_n": 1,
+      "candidate_passes": 1,
+      "candidate_n": 1,
+      "n_regress": 0,
+      "n_improve": 1
+    },
+    {
+      "task": "wrap-quoted",
+      "baseline_passes": 0,
+      "baseline_n": 1,
+      "candidate_passes": 0,
+      "candidate_n": 1,
+      "n_regress": 0,
+      "n_improve": 0
+    }
+  ],
+  "history": [
+    {
+      "batch": 0,
+      "n_pairs": 6,
+      "n_discordant": 1,
+      "n_regress": 0,
+      "n_improve": 1,
+      "e_value": 0.7,
+      "spent_usd": 1.753791
+    }
+  ]
+}

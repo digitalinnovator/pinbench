@@ -1,0 +1,42 @@
+# Step 6 of the benchmark plan: the caching-off cost check. Same harness, model and tasks; the
+# only difference is DISABLE_PROMPT_CACHING=1, a stand-in for the postmortem's thinking-block
+# caching bug (26 March). It should move cost and latency, not pass rate.
+#
+#   canary compare h45 h45-no-cache -c examples/benchmark-suite/cache-check.toml --dry-run
+
+[suite]
+name = "benchmark-cache-check"
+tasks_dir = "tasks"
+# The 6 cheapest of the 18 selected tasks, by their step-4 cost.
+include = ["strip-comments", "wrap-quoted", "format-number", "invoice-rounding", "cli-grep-lite", "dedupe-contacts"]
+
+[runner]
+kind = "harbor"
+harbor_command = ["uv", "run", "--project", "../../tools/harbor", "--frozen", "harbor"]
+environment = "docker"
+n_concurrent = 4
+agent_setup_timeout_multiplier = 2.0
+
+[stats]
+alpha = 0.05
+alternative = "less"
+warmup_batches = 0
+
+[budget]
+max_usd = 5.0
+max_batches = 1
+attempts_per_batch = 1
+
+# Caps high enough not to cut off either arm's cost, which is what is being measured.
+[pins.h45]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.20", max_turns = 20 }
+
+[pins.h45-no-cache]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.50", max_turns = 20 }
+env = { DISABLE_PROMPT_CACHING = "1" }

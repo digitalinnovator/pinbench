@@ -4,7 +4,7 @@
 
 Agent Canary re-runs your own task suite against pinned versions of a coding-agent harness and model. It stops as soon as a regression in pass rate is statistically clear, and reports cost, token and latency changes with confidence intervals. It composes [Harbor](https://github.com/harbor-framework/harbor) for sandboxed execution and adds the missing layer on top: version pinning, sequential statistics, budgets and immutable evidence.
 
-> **Status: pre-alpha, local development only.** The vertical slice works end to end: suite → paired runs → statistics → false-success check → sealed bundle → index → report. It has been verified against real Harbor sandboxes with Claude Code 2.1.283 ([spike 0001](docs/spikes/0001-harbor-claude-code.md)). No benchmark numbers are published yet. See the [roadmap](docs/roadmap.md).
+> **Status: pre-alpha, local development only.** Everything in the v0.1 scope is built and has run against real harnesses: Claude Code (several versions, three models) and Codex, through Harbor in Docker. A first benchmark campaign is below. See the [roadmap](docs/roadmap.md).
 
 <!-- Demo GIF goes here once the Claude Code spike has run (docs/spikes/0001-harbor-claude-code.md). -->
 
@@ -14,7 +14,30 @@ Anthropic's [2026-04-23 postmortem](https://www.anthropic.com/engineering/april-
 
 ## Headline benchmark
 
-*Not yet published.* A [power simulation](benchmarks/results/power-simulation.md) (simulated, not measured) sizes it. The planned regression-injection benchmark injects the three postmortem failure types into a pinned Claude Code (`examples/demo-suite/canary.toml` has the injection pins). It then reports how many runs and dollars it takes to flag each regression at 95% confidence. Every number here will come from a committed benchmark script.
+One pre-registered campaign on the canary's own [18-task suite](examples/benchmark-suite/), October 2026, on a fixed budget of about $20 of API credit. Every number below is rebuilt from committed evidence by [`benchmarks/campaign_report.py`](benchmarks/campaign_report.py) into [`campaign-2026-10.md`](benchmarks/results/campaign-2026-10.md); the [campaign log](docs/benchmark/campaign-log.md) has each step and its gates.
+
+| Injected regression (postmortem analogue) | Harness and model | Result | Trials | Cost |
+|---|---|---|---|---|
+| Reasoning effort high → low (default effort lowered, 4 March) | Claude Code 2.1.283, Sonnet 5, 10 tasks | Pass rate 63% → 45%. **Not flagged** by the anytime-valid test (E = 11.3 against 20). A one-look test at the pre-registered 5 batches gives p = 0.025 | 120 | $13.00 |
+| | | Cost ×0.62, output ×0.42, agent time ×0.65 (all 95% intervals exclude 1) | | |
+| Prompt caching off (thinking-block caching bug, 26 March) | Claude Code 2.1.283, Haiku 4.5, 6 tasks | **Cost ×2.63, flagged** (95% interval 1.75–4.10) after one batch | 12 | $1.75 |
+
+Read it this way:
+
+- **The cost regression is caught cheaply. The pass-rate regression, at this size, is not.** An 18-point drop on 10 tasks took the sequential test to E = 11.3 after 6 batches. At the observed rates it needs about 10 batches (about $22) to flag 80% of the time (simulated). The price of being allowed to look after every batch is needing more evidence than a test that looks once.
+- **This is one run, not a detection rate.** It shows what the canary concluded on one budget, not how often it would.
+- **The real harness showed about 0.6 of the effect** that a free pre-screen predicted (18 points against about 31), with the same baseline difficulty (67% against 66%).
+- **Low effort claimed "tests pass" far more often and was wrong far more often.** It claimed so in 55 of 60 trials and then failed the hidden tests in 29 of them; high effort claimed it 33 times, with 9 such failures. None of these claims was false by the verifier's rule (each had a passing test run after the last edit): the agent's own checks were weaker than the hidden tests.
+
+Also verified on real trials:
+
+- **Every knob reaches the harness.** Effort, appended system prompt, caching off, turn cap and dollar cap; both caps stop a trial and keep its cost.
+- **Re-priced cost equals harness-reported cost** on every trial, for Opus 5, Sonnet 5, Haiku 4.5 and `gpt-6-luna`.
+- **A real release check works.** 2.1.283 against 2.1.303, one Harbor job per version, each trial proving its version from its own transcript.
+- **The March–April 2026 builds (2.1.66, 2.1.85, 2.1.112) still run** against today's API.
+- **Codex 0.163.0 runs through the canary** on `gpt-6-luna` at about $0.005 a trial. It solved 63 of 64 attempts at high effort and 60 of 64 at low on all 32 tasks, so this suite (tuned against Sonnet 5) has no headroom for it. Low effort still cut Codex's cost to ×0.58 and its time to ×0.64.
+
+The design behind these numbers is in the [benchmark plan](docs/benchmark/plan.md). A free [pre-screen](docs/benchmark/prescreen.md) chose the tasks before any trial was paid for.
 
 ## Quickstart
 
