@@ -88,3 +88,52 @@ Codex CLI 0.163.0 on `gpt-6-luna`, the three demo tasks at reasoning effort high
 - **The gate after step 4 fails as written.** At these prices a batch of 18 pairs costs about $4.50, and with caps of $0.25 the ledger can hold only 2 batches. So the headline design is revised below, before it runs.
 
 **Total after step 4: Anthropic $3.72 of $22.50; OpenAI $0.01 of $9.00.**
+
+## Step 5: the headline, 2026-10-20/21
+
+`canary compare s5-high s5-low -c examples/benchmark-suite`: Claude Code 2.1.283 on Sonnet 5, reasoning effort high against low, the 10 tasks selected after step 4, at most 5 batches, futility look after batch 3. **Spend: $10.82** (expected about $8.80; the ledger held $7.80 per batch).
+
+| Batch | Pairs | Discordant | Regressed / improved | E (threshold 20) |
+|---|---|---|---|---|
+| 0 | 10 | 3 | 2 / 1 | 1.13 |
+| 1 | 20 | 5 | 3 / 2 | 0.99 |
+| 2 | 30 | 9 | 7 / 2 | 2.95 |
+| 3 | 40 | 13 | 10 / 3 | 4.57 |
+| 4 | 50 | 17 | 13 / 4 | 7.15 |
+
+**Verdict: not flagged.** The run reached its batch cap with E = 7.15, an anytime-valid p ≤ 0.14. The futility look after batch 3 let it continue (net 5 regressions, above the 4 required).
+
+- **Pass rate: 32/50 (64%) at high effort against 23/50 (46%) at low**, a drop of 18 points. Discordant pairs went 13 to 4 against low effort.
+- **A one-look test on the same trials would have flagged it.** The run reached its pre-registered cap, so the fixed-sample McNemar test is valid here: 13 of 17 discordant pairs, exact one-sided p = 0.025 (two-sided 0.049). This is the price of being allowed to look after every batch: the sequential test needs more evidence for the same error guarantee. It is also what a fixed-sample tool would have reported.
+- **Transfer from the pre-screen was about 0.6:** the pre-screen predicted a drop of about 31 points on these tasks (after shrinkage); the real harness showed 18.
+- **Cost and latency, low against high** (cluster bootstrap over 10 tasks, warm-up batch excluded; 10 tasks is fewer than the 20 at which these intervals are trustworthy):
+
+  | Metric | Low / high | 95% interval |
+  |---|---|---|
+  | Cost | ×0.62 | 0.56–0.68 |
+  | Output tokens | ×0.42 | 0.37–0.46 |
+  | Agent time | ×0.64 | 0.51–0.76 |
+  | Cache reads | ×0.84 | 0.71–0.99 |
+
+- **Claims:** low effort said its tests pass in 45 of 50 trials, high effort in 27. None was a false success by the verifier's rule: every claim had a passing test run after the last edit. But low effort passed the hidden tests only 23 times, so at least 22 of its claims rested on the visible test alone, which the hidden ones go beyond.
+- **No cap hits, no infrastructure errors, no dropped pairs.** Mean cost $0.132 per high-effort trial and $0.084 per low-effort one; the dearest trial was $0.249 under a $0.30 cap.
+
+**Total after step 5: Anthropic $14.55 of $22.50; OpenAI $0.01 of $9.00.**
+
+## Step 7: one extra batch of the headline, 2026-10-21
+
+The plan's leftover rule (fixed before any spend): if the headline ends inconclusive at its batch cap with $15.00 or less spent, it gets one more batch. It ended at $14.55. `canary compare … --continue-from 20261020T174900Z-compare-98c8b5 --max-batches 1` continued the same e-process. **Spend: $2.18.**
+
+| Batch | Pairs | Discordant | Regressed / improved | E (threshold 20) |
+|---|---|---|---|---|
+| 5 | 60 | 21 | 16 / 5 | 11.31 |
+
+**Final verdict: not flagged.** E = 11.3, anytime-valid p ≤ 0.088, after 6 batches and $13.00 in total for the headline.
+
+- **Pass rate over 6 batches: 38/60 (63%) at high effort, 27/60 (45%) at low.**
+- **Continuing was valid for the e-process** (it is a test supermartingale, so extending after a look keeps the 5% guarantee). It is **not** valid for a fixed-sample test: the McNemar figure that may be reported is the one at the pre-registered 5-batch cap (p = 0.025 one-sided), not one on all 6 batches.
+- Cost and latency ratios barely moved: cost ×0.62 (0.57–0.67), output ×0.42 (0.36–0.46), agent time ×0.65 (0.54–0.75).
+
+**What the headline can honestly say:** on 10 tasks and 120 trials, the canary's anytime-valid test did not flag a reasoning-effort cut on Claude Code with Sonnet 5 (E = 11.3 against 20), although pass rate fell 18 points and a one-look test at the pre-registered sample would have flagged it. Cost, tokens and latency fell clearly. At the observed rates, about 4 more batches (10 in all, about $22) would flag it 80% of the time (simulated); that does not fit this budget.
+
+**Total after step 7: Anthropic $16.73 of $22.50.**
