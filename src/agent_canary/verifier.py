@@ -22,7 +22,7 @@ from typing import Any, Literal
 from agent_canary.models import ClaimCheck
 
 # Bump when a rule changes, so stored verdicts can be told apart from recomputed ones.
-RULES_VERSION = 1
+RULES_VERSION = 2  # 2: Codex code-mode `exec` scripts are read for shell commands and patches
 
 Outcome = Literal["passed", "failed", "unknown"]
 
@@ -200,6 +200,33 @@ def _command(arguments: Any) -> str | None:
     return None
 
 
+# Codex's code mode wraps every action in one `exec` tool whose input is a JavaScript snippet,
+# e.g. `await tools.exec_command({cmd: "pytest -q"})`, and edits files with an embedded patch.
+_CODE_MODE_TOOLS = frozenset({"exec"})
+_JS_COMMAND = re.compile(
+    r"""exec_command\(\s*\{[^}]*?\bcmd\s*:\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`[^`]*`)"""
+)
+_JS_PATCH = re.compile(r"\*\*\* Begin Patch|\bapply_patch\b|\bwrite_file\b")
+
+
+def _js_string(literal: str) -> str:
+    body = literal[1:-1]
+    if literal[0] == '"':
+        try:
+            value = json.loads(literal)
+            return value if isinstance(value, str) else body
+        except ValueError:
+            return body
+    return body.replace("\\'", "'").replace("\\n", "\n").replace("\\\\", "\\")
+
+
+def code_mode_actions(script: str) -> list[tuple[str, str]]:
+    """The edits and shell commands in a Codex code-mode script, in the order they appear."""
+    found = [(m.start(), "edit", "") for m in _JS_PATCH.finditer(script)]
+    found += [(m.start(), "cmd", _js_string(m.group(1))) for m in _JS_COMMAND.finditer(script)]
+    return [(kind, text) for _, kind, text in sorted(found)]
+
+
 def _result_output(result: dict[str, Any]) -> tuple[str, bool]:
     raw = result.get("extra")
     extra: dict[str, Any] = raw if isinstance(raw, dict) else {}
@@ -230,16 +257,29 @@ def _events(trajectory: dict[str, Any]) -> list[_Event]:
         }
         for call in step.get("tool_calls") or []:
             name = str(call.get("function_name", "")).lower()
-            command = _command(call.get("arguments"))
-            if name in _EDIT_TOOLS or (command and is_shell_edit(command)):
-                events.append(_Event("edit", step_id))
-            if command and is_test_command(command):
-                output, is_error = _result_output(results.get(call.get("tool_call_id")) or {})
-                events.append(
-                    _Event(
-                        "test", step_id, command, classify_test_output(output, is_error=is_error)
+            arguments = call.get("arguments")
+            script = arguments.get("input") if isinstance(arguments, dict) else None
+            if name in _CODE_MODE_TOOLS and isinstance(script, str):
+                actions = code_mode_actions(script)
+            else:
+                command = _command(arguments)
+                actions = [("edit", "")] if name in _EDIT_TOOLS else []
+                if command:
+                    actions.append(("cmd", command))
+            for kind, command in actions:
+                if kind == "edit" or is_shell_edit(command):
+                    events.append(_Event("edit", step_id))
+                if kind == "cmd" and is_test_command(command):
+                    # One script can run several commands; their output is reported together.
+                    output, is_error = _result_output(results.get(call.get("tool_call_id")) or {})
+                    events.append(
+                        _Event(
+                            "test",
+                            step_id,
+                            command,
+                            classify_test_output(output, is_error=is_error),
+                        )
                     )
-                )
     return events
 
 

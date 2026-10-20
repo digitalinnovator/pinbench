@@ -94,6 +94,13 @@ In this order. After every step, reconcile the ledger against the provider conso
 
 Expected total: about $10–18, depending on how early the headline stops.
 
+**Revision after step 4 (2026-10-20, before step 5 runs).** Real trials cost $0.155 on average, twice the planning price, so 18 tasks fit only 2 batches. The headline instead uses the 10 tasks with the largest expected drop per dollar, ranked mechanically:
+
+- **Rule:** for each of the 18 tasks, expected drop = shrunk pre-screen high-effort pass rate minus shrunk low-effort pass rate (Beta(1, 1) prior); expected cost = the step-4 trial cost × 1.65 (one high and one low trial, low assumed at 0.65× high). Keep the 10 with the largest ratio.
+- **Selected:** `invoice-rounding`, `order-state-machine`, `glob-match`, `format-number`, `version-range-match`, `dedupe-contacts`, `money-split`, `iso-week-report`, `strip-comments`, `cli-short-flags`.
+- **Design:** per-trial cap $0.30 on both arms (above every step-4 trial of these tasks; the dearest was $0.249), `max_turns = 20`, at most 5 batches, futility look after batch 3, `max_usd = 12` (five batches at the expected $2.30 each).
+- **Simulated detection** (shrunk pre-screen rates, step-4 baseline included): 97% if the pre-screen's effect transfers fully, 76% at three quarters, 35% at half. Expected cost about $8.80; the ledger holds 5 batches even if every trial hits its cap.
+
 **Gates:**
 
 - **After step 1:** no infrastructure errors; effort appears in the Sonnet requests; the caching-off trial shows zero cache tokens; a capped trial ends with its cost recorded; the ledger agrees with the console within 5%. A Haiku trial costs at most $0.06 and a Sonnet trial at most $0.12.

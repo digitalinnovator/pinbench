@@ -68,3 +68,23 @@ harness = "claude-code"
 version = "2.1.283"
 model = "anthropic/claude-sonnet-5"
 options = { reasoning_effort = "low", max_budget_usd = "0.15", max_turns = 20 }
+
+# --- Step 3: do builds from the postmortem dates still run against today's API? One trial each.
+# Not a replay of the incident: Haiku 4.5 and an API key, not Opus 4.6 on a subscription.
+[pins.h45-v2166]
+harness = "claude-code"
+version = "2.1.66"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.08", max_turns = 20 }
+
+[pins.h45-v2185]
+harness = "claude-code"
+version = "2.1.85"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.08", max_turns = 20 }
+
+[pins.h45-v21112]
+harness = "claude-code"
+version = "2.1.112"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.08", max_turns = 20 }

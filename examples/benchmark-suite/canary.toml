@@ -9,12 +9,11 @@
 [suite]
 name = "benchmark"
 tasks_dir = "tasks"
-# The 18 tasks chosen by the fixed selection rule in docs/benchmark/prescreen.md.
+# The 10 tasks for the headline: the 18 chosen by the pre-screen rule (docs/benchmark/prescreen.md),
+# cut to the 10 with the largest expected drop per dollar after step 4 (docs/benchmark/plan.md).
 include = [
-  "glob-match", "cli-short-flags", "invoice-rounding", "order-state-machine",
-  "version-range-match", "dedupe-contacts", "money-split", "format-number", "iso-week-report",
-  "cli-grep-lite", "coin-change-limited", "dependency-order", "env-file-parser",
-  "strip-comments", "wrap-quoted", "title-case-style", "extract-registry-class", "interval-set",
+  "invoice-rounding", "order-state-machine", "glob-match", "format-number", "version-range-match",
+  "dedupe-contacts", "money-split", "iso-week-report", "strip-comments", "cli-short-flags",
 ]
 
 [runner]
@@ -35,7 +34,7 @@ futility_min_net_regressions = 4
 warmup_batches = 1
 
 [budget]
-max_usd = 11.0
+max_usd = 12.0
 max_batches = 5
 attempts_per_batch = 1
 
@@ -45,13 +44,13 @@ attempts_per_batch = 1
 harness = "claude-code"
 version = "2.1.283"
 model = "anthropic/claude-sonnet-5"
-options = { reasoning_effort = "high", max_budget_usd = "0.15", max_turns = 20 }
+options = { reasoning_effort = "high", max_budget_usd = "0.30", max_turns = 20 }
 
 [pins.s5-low]
 harness = "claude-code"
 version = "2.1.283"
 model = "anthropic/claude-sonnet-5"
-options = { reasoning_effort = "low", max_budget_usd = "0.15", max_turns = 20 }
+options = { reasoning_effort = "low", max_budget_usd = "0.30", max_turns = 20 }
 
 # Calibration (plan, step 4): s5-high with a loose cap, so the cap does not cut off the cost
 # distribution it is meant to measure. Its trials never enter a test.

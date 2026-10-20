@@ -67,10 +67,18 @@ model = "anthropic/claude-opus-5"
 options = { reasoning_effort = "high", max_budget_usd = "0.30" }
 env = { DISABLE_PROMPT_CACHING = "1" }
 
+# --- A cheap Claude Code pin for checks that do not need a frontier model (the release watcher).
+# Claude Code ignores reasoning_effort on Haiku 4.5, so this pin does not set it.
+[pins.h45]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.08", max_turns = 20 }
+
 # --- Release watcher: `canary watch` checks npm for a newer Claude Code than the baseline pin.
 # `canary watch --run` then compares the baseline with the same pin at the new version.
 [watch.claude-code]
-baseline = "cc-baseline"
+baseline = "h45"
 channel = "latest"             # or "stable"
 
 # --- Alerts (off until a channel is set). Secrets are read from the named environment variables.
