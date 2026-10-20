@@ -72,6 +72,7 @@ def _manifest(
     kind: str,
     baseline: str | None = None,
     candidate: str | None = None,
+    continues: str | None = None,
 ) -> RunManifest:
     cfg = loaded.config
     return RunManifest(
@@ -94,6 +95,7 @@ def _manifest(
         ],
         baseline=baseline,
         candidate=candidate,
+        continues=continues,
         settings={
             "stats": cfg.stats.model_dump(mode="json"),
             "budget": cfg.budget.model_dump(mode="json"),
@@ -203,6 +205,54 @@ def _metrics(
     return out
 
 
+_CONTINUABLE = frozenset({"max_batches", "budget_usd", "ledger"})
+
+
+def _prior_run(
+    prior: RunBundle | None,
+    loaded: LoadedConfig,
+    suite: Suite,
+    pins: dict[str, PinSpec],
+    baseline: str,
+    candidate: str,
+) -> tuple[SequentialState, list[BatchPoint], list[TrialRecord], float, bool]:
+    """The state to start from: empty, or an earlier compare replayed batch by batch."""
+    cfg = loaded.config
+    if prior is None:
+        return SequentialState(q_max=cfg.stats.mixture_max), [], [], 0.0, True
+    manifest, verdict = prior.manifest(), prior.verdict()
+    problems = []
+    if manifest.kind != "compare" or verdict is None:
+        problems.append("it is not a finished compare run")
+    if (manifest.baseline, manifest.candidate) != (baseline, candidate):
+        problems.append(f"it compared {manifest.baseline} with {manifest.candidate}")
+    then = {p.name: p.fingerprint for p in manifest.pins}
+    for name, pin in pins.items():
+        if then.get(name) != pin.fingerprint(loaded.root):
+            problems.append(f"pin {name!r} has changed since")
+    if [(t.name, t.digest) for t in manifest.tasks] != [(t.name, t.digest) for t in suite.tasks]:
+        problems.append("its tasks are not the suite's tasks now")
+    keys = ("alpha", "alternative", "mixture_max", "pass_threshold")
+    stats_then = manifest.settings.get("stats", {})
+    if any(stats_then.get(k) != getattr(cfg.stats, k) for k in keys):
+        problems.append("its test settings differ")
+    if verdict is not None and verdict.stop_reason not in _CONTINUABLE:
+        problems.append(f"it stopped for {verdict.stop_reason!r}, which is final")
+    if problems:
+        raise ValueError(f"cannot continue run {prior.run_id}: " + "; ".join(problems))
+    assert verdict is not None
+    records = prior.trials()
+    state = SequentialState(q_max=cfg.stats.mixture_max)
+    for batch in sorted({r.batch for r in records}):
+        pairs, _ = build_pairs([r for r in records if r.batch == batch], baseline, candidate)
+        state = state.update(pairs, cfg.stats.alternative)
+    if (state.n_regress, state.n_improve) != (verdict.n_regress, verdict.n_improve):
+        raise ValueError(
+            f"cannot continue run {prior.run_id}: its trials do not reproduce its verdict"
+        )
+    return state, list(verdict.history), records, verdict.spent_usd, verdict.cost_known
+
+
 def _validate(runner: Runner, pins: dict[str, PinSpec]) -> None:
     check = getattr(runner, "validate", None)
     if callable(check):
@@ -234,11 +284,20 @@ def run_compare(
     *,
     max_usd: float | None = None,
     max_batches: int | None = None,
+    continue_from: RunBundle | None = None,
 ) -> RunOutcome:
+    """Run a sequential paired comparison, or extend an earlier one with more batches.
+
+    Continuing is valid for the e-process: it is a test supermartingale, so deciding to collect
+    more batches after looking at the result does not raise the false-alarm rate (ADR-0003). The
+    continuation must use the same pins, tasks and test settings; `max_batches` and `max_usd`
+    then apply to the new batches only.
+    """
     cfg = loaded.config
     if baseline == candidate:
         raise ValueError("baseline and candidate must be different pins")
     pins = {baseline: loaded.pin(baseline), candidate: loaded.pin(candidate)}
+    prior = _prior_run(continue_from, loaded, suite, pins, baseline, candidate)
     budget_usd = cfg.budget.max_usd if max_usd is None else max_usd
     batch_limit = cfg.budget.max_batches if max_batches is None else max_batches
     alternative, alpha = cfg.stats.alternative, cfg.stats.alpha
@@ -251,7 +310,14 @@ def run_compare(
     preflight(plan, ledger, max_usd=budget_usd)
 
     manifest = _manifest(
-        loaded, suite, runner, pins, kind="compare", baseline=baseline, candidate=candidate
+        loaded,
+        suite,
+        runner,
+        pins,
+        kind="compare",
+        baseline=baseline,
+        candidate=candidate,
+        continues=continue_from.run_id if continue_from else None,
     )
     bundle = RunBundle.create(runs_dir(loaded.home), manifest)
     log.info(
@@ -265,15 +331,15 @@ def run_compare(
     )
 
     records: list[TrialRecord] = []
-    state = SequentialState(q_max=cfg.stats.mixture_max)
-    history: list[BatchPoint] = []
+    state, history, prior_records, prior_spent, prior_known = prior
+    first = len(history)
     stop_reason: str | None = None
     try:
-        for batch in range(batch_limit):
+        for done, batch in enumerate(range(first, first + batch_limit)):
             # Soft stop, from measured spend. A trial with no cost counts at its cap, so an
             # unknown cost can stop the run early but can never switch the check off.
             spent, _ = plan.spent(records)
-            if batch > 0 and spent + spent / batch > budget_usd:
+            if done > 0 and spent + spent / done > budget_usd:
                 stop_reason = "budget_usd"
                 break
             # Hard stop: the batch's worst case must fit the pool's lifetime limit.
@@ -310,7 +376,7 @@ def run_compare(
                 n_regress=state.n_regress,
                 n_improve=state.n_improve,
                 e_value=state.e(alternative),
-                spent_usd=round(spent, 6),
+                spent_usd=round(prior_spent + spent, 6),
             )
             history.append(point)
             log.info("batch evaluated", extra=point.model_dump())
@@ -339,8 +405,11 @@ def run_compare(
         RunIndex(index_path(loaded.home)).ingest(bundle)
         raise
 
+    new_records = records
+    records = prior_records + new_records
     _, dropped = build_pairs(records, baseline, candidate)
-    spent, cost_known = plan.spent(records)
+    spent, cost_known = plan.spent(new_records)
+    spent, cost_known = prior_spent + spent, prior_known and cost_known
     verdict = Verdict(
         decision=state.decision(alternative, alpha),
         stop_reason=stop_reason,  # type: ignore[arg-type]

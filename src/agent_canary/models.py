@@ -109,6 +109,10 @@ class RunManifest(_Record):
     pins: list[PinRecord]
     baseline: str | None = None
     candidate: str | None = None
+    continues: str | None = Field(
+        default=None,
+        description="Run id of an earlier compare that this run extends with more batches.",
+    )
     settings: dict[str, Any] = Field(description="Stats, budget and runner settings used.")
 
 

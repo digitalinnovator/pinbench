@@ -223,7 +223,15 @@ def run(
 
 # Errors raised before a run could spend anything: bad config, a refused budget, a batch that
 # never started. They say nothing about the harness or release under test.
-_REFUSALS = (KeyError, ValueError, SuiteError, BudgetError, LedgerError, RunnerNotStarted)
+_REFUSALS = (
+    KeyError,
+    ValueError,
+    SuiteError,
+    BudgetError,
+    LedgerError,
+    RunnerNotStarted,
+    BundleError,
+)
 _RUN_ERRORS = (*_REFUSALS, RunnerError, PinDriftError)
 
 
@@ -269,6 +277,7 @@ def _compare(
     report: bool,
     alert: bool,
     dry_run: bool = False,
+    continue_from: str | None = None,
 ) -> RunOutcome | None:
     """Run a compare, print its result, render the report and send alerts."""
     try:
@@ -286,8 +295,16 @@ def _compare(
                 cfg.max_usd if max_usd is None else max_usd,
             )
             return None
+        prior = find_bundle(loaded.home, continue_from) if continue_from else None
         outcome = run_compare(
-            loaded, suite, runner, baseline, candidate, max_usd=max_usd, max_batches=max_batches
+            loaded,
+            suite,
+            runner,
+            baseline,
+            candidate,
+            max_usd=max_usd,
+            max_batches=max_batches,
+            continue_from=prior,
         )
     except _RUN_ERRORS as exc:
         raise _exit_for(exc) from None
@@ -360,6 +377,14 @@ def compare(
     report: Annotated[bool, typer.Option(help="Render the HTML report.")] = True,
     alert: Annotated[bool, typer.Option(help="Send alerts configured in [alerts].")] = True,
     dry_run: DryRunOpt = False,
+    continue_from: Annotated[
+        str | None,
+        typer.Option(
+            "--continue-from",
+            help="Extend an earlier compare (run id) with more batches; max-batches and "
+            "max-usd then count the new batches only.",
+        ),
+    ] = None,
 ) -> None:
     """Sequential paired A/B test of two pins. Exit code 1 means a regression was detected."""
     outcome = _compare(
@@ -372,6 +397,7 @@ def compare(
         report=report,
         alert=alert,
         dry_run=dry_run,
+        continue_from=continue_from,
     )
     if outcome is None:
         return

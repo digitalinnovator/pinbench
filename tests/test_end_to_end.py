@@ -253,3 +253,53 @@ def test_warmup_batches_are_left_out_of_cost_metrics_only(simulated_project: Pat
     assert verdict.n_pairs == 36  # 6 tasks x 2 attempts x 3 batches: pass rate uses every batch
     cost = next(m for m in verdict.metrics if m.metric == "cost_usd")
     assert cost.n_baseline == 24  # batches 1 and 2 only
+
+
+def test_continuing_a_run_gives_the_verdict_of_one_longer_run(simulated_project: Path) -> None:
+    loaded = load_config(simulated_project)
+    cfg = loaded.config
+
+    def runner() -> SimulatedRunner:
+        return SimulatedRunner(
+            cfg.runner.simulated, seed=cfg.stats.seed, task_spread=cfg.runner.simulated_task_spread
+        )
+
+    suite = load_suite(loaded)
+    whole = run_compare(loaded, suite, runner(), "good", "same", max_batches=4).verdict
+    first = run_compare(loaded, suite, runner(), "good", "same", max_batches=2)
+    rest = run_compare(
+        loaded, suite, runner(), "good", "same", max_batches=2, continue_from=first.bundle
+    )
+    assert whole is not None
+    assert rest.verdict is not None
+    # The simulated runner draws batch b from the same seed either way, so the trials are the
+    # same, and so must be the e-process.
+    assert [p.batch for p in rest.verdict.history] == [0, 1, 2, 3]
+    assert rest.verdict.e_value == pytest.approx(whole.e_value)
+    assert rest.verdict.p_value == pytest.approx(whole.p_value)
+    assert (rest.verdict.n_regress, rest.verdict.n_improve) == (whole.n_regress, whole.n_improve)
+    assert rest.verdict.spent_usd == pytest.approx(whole.spent_usd)
+    assert rest.bundle.manifest().continues == first.bundle.run_id
+    assert len(rest.bundle.trials()) == len(first.bundle.trials())  # only the new batches
+
+
+def test_a_run_can_only_continue_unchanged(simulated_project: Path) -> None:
+    loaded = load_config(simulated_project)
+    cfg = loaded.config
+    runner = SimulatedRunner(
+        cfg.runner.simulated, seed=cfg.stats.seed, task_spread=cfg.runner.simulated_task_spread
+    )
+    suite = load_suite(loaded)
+    first = run_compare(loaded, suite, runner, "good", "same", max_batches=1)
+    with pytest.raises(ValueError, match="it compared good with same"):
+        run_compare(loaded, suite, runner, "good", "bad", continue_from=first.bundle)
+    flagged = run_compare(loaded, suite, runner, "good", "bad")
+    assert flagged.verdict is not None
+    assert flagged.verdict.stop_reason == "significant"
+    with pytest.raises(ValueError, match="stopped for 'significant', which is final"):
+        run_compare(loaded, suite, runner, "good", "bad", continue_from=flagged.bundle)
+    toml = simulated_project / "canary.toml"
+    toml.write_text(toml.read_text().replace('version = "1.0.2"', 'version = "1.0.3"'))
+    changed = load_config(simulated_project)
+    with pytest.raises(ValueError, match="pin 'same' has changed since"):
+        run_compare(changed, suite, runner, "good", "same", continue_from=first.bundle)
