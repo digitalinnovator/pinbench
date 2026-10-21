@@ -88,7 +88,8 @@ def check_task(task: Path, naive: Path | None) -> dict[str, object]:
 
     config = tomllib.loads((task / "task.toml").read_text())
     name = config.get("task", {}).get("name")
-    record("task name", name == f"pinbench/{task.name}", f"found {name!r}")
+    # The suite's Harbor names predate the rename; they are part of the frozen suite (ADR-0010).
+    record("task name", name == f"agent-canary/{task.name}", f"found {name!r}")
 
     for rel in ("environment/Dockerfile", "tests/test.sh"):
         same = (task / rel).read_bytes() == (REFERENCE_TASK / rel).read_bytes()
