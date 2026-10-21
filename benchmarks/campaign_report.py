@@ -4,6 +4,9 @@ Run bundles live under each suite's `.canary/runs/` and are not committed (they 
 transcripts, tens of megabytes). This script copies the part every published number depends on,
 each bundle's `manifest.json`, `trials.jsonl`, `verdict.json` and `SHA256SUMS`, into
 `benchmarks/results/campaign-2026-10/`, and checks each copied file against its bundle's checksum.
+It also re-checks every transcript's "tests pass" claim with the current verifier rules and writes
+the verdicts next to them (`claims.jsonl`), because a bundle keeps the verdicts of the rules it ran
+with.
 The report is then built from those committed files alone, so anyone can rebuild it:
 
     uv run python benchmarks/campaign_report.py export    # from local bundles (owner's machine)
@@ -24,7 +27,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from scipy.stats import binom
+from scipy.stats import beta, binom
+
+from agent_canary.verifier import RULES_VERSION, check_trial
 
 REPO = Path(__file__).resolve().parent.parent
 EVIDENCE = REPO / "benchmarks" / "results" / "campaign-2026-10"
@@ -119,7 +124,27 @@ STEPS = [
         "examples/benchmark-suite-codex",
         "20261020T202808Z-compare-b725f2",
     ),
+    Step(
+        "C2-codex-none-probe",
+        "Codex probe: effort none on 18 tasks",
+        "examples/benchmark-suite-codex",
+        "20261021T020615Z-run-02a846",
+    ),
+    *(
+        Step(f"R-{label}", title, "examples/benchmark-suite-codex", run_id)
+        for label, title, run_id in (
+            ("det1", "Codex replicated: detection run 1", "20261021T030101Z-compare-b295f8"),
+            ("det2", "Codex replicated: detection run 2", "20261021T034602Z-compare-c037da"),
+            ("det3", "Codex replicated: detection run 3", "20261021T041401Z-compare-b4d862"),
+            ("det4", "Codex replicated: detection run 4", "20261021T030122Z-compare-aae17d"),
+            ("det5", "Codex replicated: detection run 5", "20261021T034624Z-compare-54eac1"),
+            ("aa1", "Codex replicated: identical arms, run 1", "20261021T042719Z-compare-32ee06"),
+            ("aa2", "Codex replicated: identical arms, run 2", "20261021T041457Z-compare-1f52c5"),
+        )
+    ),
 ]
+DETECTION = ("R-det1", "R-det2", "R-det3", "R-det4", "R-det5")
+IDENTICAL = ("R-aa1", "R-aa2")
 
 
 def _sha256(path: Path) -> str:
@@ -149,7 +174,17 @@ def export() -> None:
                 target.chmod(0o644)
             shutil.copyfile(src, target)
             target.chmod(0o644)
-    print(f"exported {len(STEPS)} runs to {EVIDENCE.relative_to(REPO)}")
+        rows = []
+        for line in (bundle / "trials.jsonl").read_text().splitlines():
+            trial = json.loads(line) if line else None
+            if not trial or not trial.get("trial_dir") or trial["status"] == "error":
+                continue
+            check = check_trial(bundle / trial["trial_dir"])
+            if check is not None:
+                rows.append({"trial_name": trial["trial_name"], **check.model_dump(mode="json")})
+        (dest / "claims.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    where = EVIDENCE.relative_to(REPO)
+    print(f"exported {len(STEPS)} runs to {where} (claims: rules v{RULES_VERSION})")
 
 
 # -- reading the committed evidence --------------------------------------------------------------
@@ -170,6 +205,26 @@ def _load(step: Step) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, A
         if (d / name).exists() and sums.get(name) != _sha256(d / name):
             sys.exit(f"{step.key}: committed {name} does not match the bundle's SHA256SUMS")
     return manifest, trials, verdict
+
+
+def _claims(step: Step) -> dict[str, dict[str, Any]]:
+    """Claim verdicts by trial name, from the export's re-check with the current rules."""
+    path = EVIDENCE / step.run_id / "claims.jsonl"
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line]
+    return {r["trial_name"]: r for r in rows}
+
+
+def _claim_line(pin: str, trials: list[dict[str, Any]], claims: dict[str, Any]) -> str:
+    checked = [(t, claims[t["trial_name"]]) for t in trials if t["trial_name"] in claims]
+    claimed = [(t, c) for t, c in checked if c["verdict"] != "no_claim"]
+    n = {v: sum(c["verdict"] == v for _, c in claimed) for v in ("supported", "false_success")}
+    failed = sum(t["status"] == "fail" for t, _ in claimed)
+    return (
+        f'`{pin}`: "tests pass" claimed in {len(claimed)} of {len(checked)} trials; '
+        f"{n['supported']} backed by a passing test run after the last edit, "
+        f"{n['false_success']} not, {len(claimed) - sum(n.values())} unverifiable; "
+        f"the hidden tests then failed in {failed} of them."
+    )
 
 
 def _cost(trial: dict[str, Any]) -> float:
@@ -267,17 +322,12 @@ def report() -> str:
     by_pin: dict[str, list[dict[str, Any]]] = {}
     for t in all_trials:
         by_pin.setdefault(t["pin"], []).append(t)
+    claims5 = {**_claims(data["5-headline"][0]), **_claims(data["7-extension"][0])}
+    w(f"Claim checks (verifier rules v{RULES_VERSION}):\n")
     for pin, ts in by_pin.items():
-        claims = [
-            t for t in ts if (t.get("claim_check") or {}).get("verdict") not in (None, "no_claim")
-        ]
-        false = [t for t in claims if t["claim_check"]["verdict"] == "false_success"]
-        claimed_failed = [t for t in claims if t["status"] == "fail"]
         w(
-            f"- `{pin}`: mean cost {_money(statistics.mean(_cost(t) for t in ts))} per trial; "
-            f'"tests pass" claimed in {len(claims)} of {len(ts)} trials, '
-            f"{len(false)} contradicted by the transcript, {len(claimed_failed)} followed by "
-            "failing hidden tests."
+            f"- Mean cost {_money(statistics.mean(_cost(t) for t in ts))} per trial; "
+            + _claim_line(pin, ts, claims5)
         )
     w("")
 
@@ -358,6 +408,14 @@ def report() -> str:
     for m in vc1["metrics"]:
         w(f"| {m['metric']} | ×{m['ratio']:.2f} | {m['ci_low']:.2f}–{m['ci_high']:.2f} |")
     w("")
+    _s, _mp, trials_probe, _vp = data["C2-codex-none-probe"]
+    w(
+        f"A one-trial probe at effort `none` on the 18 tasks of the efficiency index passed "
+        f"{sum(t['status'] == 'pass' for t in trials_probe)}/{len(trials_probe)}, for "
+        f"{_money(sum(_cost(t) for t in trials_probe))}. That gap led to the replicated "
+        "benchmark below.\n"
+    )
+    w(_replicated(data))
     w("## Efficiency index: dollars per solved task\n")
     w(
         "The same 18 tasks, one attempt each at high effort. This compares harness-and-model "
@@ -377,6 +435,95 @@ def report() -> str:
         )
     w("")
     return "\n".join(out).rstrip() + "\n"
+
+
+def _replicated(data: dict[str, Any]) -> str:
+    """The pre-registered replicated Codex benchmark (docs/benchmark/plan.md)."""
+    out: list[str] = []
+    w = out.append
+    _s, manifest, _t, _v = data[DETECTION[0]]
+    pins = {p["name"]: p["spec"] for p in manifest["pins"]}
+    hi, lo = pins[manifest["baseline"]], pins[manifest["candidate"]]
+    w("## Codex: replicated detection benchmark\n")
+    w(
+        f"Codex {hi['version']} on `{hi['model']}`, {len(manifest['tasks'])} tasks, effort "
+        f"`{hi['options']['reasoning_effort']}` against `{lo['options']['reasoning_effort']}`, "
+        "five independent runs; and two runs of identical arms, which should never be flagged. "
+        "Each run: one attempt per task per arm per batch, at most 6 batches, futility look "
+        "after batch 3. The protocol was committed before the first run.\n"
+    )
+    w(
+        "| Run | Decision | Stopped by | Batches | Pairs | Regressed / improved | E | Passed "
+        "| Cost |"
+    )
+    w("|---|---|---|---|---|---|---|---|---|")
+    for key in DETECTION + IDENTICAL:
+        step, _m, _ts, v = data[key]
+        assert v is not None
+        b, c = v["baseline"], v["candidate"]
+        w(
+            f"| {step.title.split(': ', 1)[1]} | {v['decision']} | {v['stop_reason']} | "
+            f"{len(v['history'])} | {v['n_pairs']} | {v['n_regress']} / {v['n_improve']} | "
+            f"{v['e_value']:.1f} | {b['passes']}/{b['n']} against {c['passes']}/{c['n']} | "
+            f"{_money(v['history'][-1]['spent_usd'])} |"
+        )
+    w("")
+    det = [data[k][3] for k in DETECTION]
+    flagged = [v for v in det if v["decision"] == "regression"]
+    k, n = len(flagged), len(det)
+    low = float(beta.ppf(0.025, k, n - k + 1)) if k else 0.0
+    high = float(beta.ppf(0.975, k + 1, n - k)) if k < n else 1.0
+    w(
+        f"- **Detected in {k} of {n} runs** (95% Clopper–Pearson interval for the detection "
+        f"rate at this effect size: {100 * low:.0f}%–{100 * high:.0f}%)."
+    )
+    if flagged:
+        trials = [2 * v["n_pairs"] for v in flagged]
+        dollars = [v["history"][-1]["spent_usd"] for v in flagged]
+        w(
+            f"- **To flag:** median {statistics.median(trials):g} trials "
+            f"(range {min(trials)}–{max(trials)}) and median {_money(statistics.median(dollars))} "
+            f"(range {_money(min(dollars))}–{_money(max(dollars))}), both arms counted."
+        )
+    aa = [data[k][3] for k in IDENTICAL]
+    false_alarms = sum(v["decision"] != "inconclusive" for v in aa)
+    w(
+        f"- **Identical arms:** {false_alarms} of {len(aa)} runs flagged anything; "
+        + "; ".join(
+            f"cost ×{m['ratio']:.2f} ({m['ci_low']:.2f}–{m['ci_high']:.2f})"
+            for v in aa
+            for m in v["metrics"]
+            if m["metric"] == "cost_usd"
+        )
+        + ". Two runs say little about the false-alarm rate; that rests on the test's "
+        "guarantee (at most 5%)."
+    )
+    ratios = [m for v in det for m in v["metrics"] if m["metric"] == "cost_usd"]
+    w(
+        f"- **Cost at effort none relative to high:** ×{min(m['ratio'] for m in ratios):.2f} to "
+        f"×{max(m['ratio'] for m in ratios):.2f} across the five detection runs."
+    )
+    by_pin: dict[str, list[dict[str, Any]]] = {}
+    claims: dict[str, Any] = {}
+    for key in DETECTION + IDENTICAL:
+        step, _m, ts, _v = data[key]
+        claims.update(_claims(step))
+        for t in ts:
+            by_pin.setdefault(t["pin"], []).append(t)
+    w(f"- **Claim checks** across the seven runs (verifier rules v{RULES_VERSION}):")
+    for pin, ts in by_pin.items():
+        w(f"  - {_claim_line(pin, ts, claims)}")
+    errors = sum(v["baseline"]["errors"] + v["candidate"]["errors"] for v in det + aa)
+    w(
+        f"- **Infrastructure errors:** {errors} {'trial' if errors == 1 else 'trials'} across the "
+        "seven runs, left out of the pairs as the canary always does."
+    )
+    w(
+        "- **Caveats:** effort `none` is a much larger cut than the postmortem's change, on a "
+        "different model; five runs give only a rough detection rate."
+    )
+    w("")
+    return "\n".join(out)
 
 
 def main() -> None:

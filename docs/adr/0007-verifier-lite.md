@@ -38,13 +38,19 @@ No public dataset says how often agents make false "tests pass" claims, so the r
 - **Precision over recall.** Hedged or unusual phrasings are missed, and so are edits made through plain redirects. The false-success rate the canary reports is a lower bound on claims of this narrow kind.
 - **It judges the agent's own claim, not the task.** A supported claim can coincide with failing hidden tests, because the agent's tests are not the hidden ones. `canary claims` prints that cross-tabulation.
 - **"After the last edit" is about the claim, not the end of the run.** Edits after the final claim are recorded (`edits_after_claim`) and do not change the verdict.
-- **Only Claude Code transcripts are verified.** The rules are harness-neutral (any tool call with a `command` or `cmd` argument is a shell call), but Codex and OpenCode transcripts as Harbor writes them are untested until their spikes.
+- **Claude Code and Codex transcripts are verified; OpenCode's are not.** The rules are harness-neutral where they can be (any tool call with a `command` or `cmd` argument is a shell call). Codex needed two harness-specific readers, below.
 - A `supported` verdict proves a passing run of *some* tests. It does not prove the run covered the change.
 - Trials that ended in an infrastructure error are not counted.
 
 ## Evidence so far
 
 The 15 real Claude Code 2.1.283 transcripts from spike 0001 (demo suite, `claude-opus-5`): 3 claims, all `supported`, all from the high-effort arm, each backed by a piped `pytest … | tail -3`. The low-effort arm called no test runner and made no claims in 6 trials. That is an observation on 15 trials of three easy tasks, not a rate. Two of these transcripts are contract fixtures in `tests/fixtures/harbor/`.
+
+## Rules versions
+
+- **v1:** the rules above, verified on Claude Code transcripts.
+- **v2 (2026-10-20):** Codex 0.163.0 runs in "code mode": every action is one `exec` tool call whose input is a JavaScript snippet, with shell commands inside `tools.exec_command({cmd: …})` and edits as embedded `*** Begin Patch` blocks. v2 reads those.
+- **v3 (2026-10-21):** Codex code mode returns its output as the text of a Python list of content parts, with escaped line breaks. Read as is, `\n2 passed` has no word boundary before the count, so every Codex test run came out "unknown" and every Codex claim "unverifiable". v3 decodes the list (with `ast.literal_eval`, which evaluates literals only) before reading. Re-checked on every campaign transcript: no Claude Code verdict changed; 314 Codex claims moved from unverifiable to supported, and none to false success. The fault never produced a false flag, only missed checks. A real Codex claim transcript is now a contract fixture.
 
 ## Alternatives considered
 

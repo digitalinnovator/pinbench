@@ -20,9 +20,9 @@ The v0.1 scope comes from the project brief. Anything outside it is parked under
 | Cost normalisation from tokens with a pinned price table | Done (ADR-0005): Anthropic and OpenAI prices; equals the harness-reported cost on every real trial |
 | Triggers: cron and new-release detection (npm dist-tags) | Done (ADR-0008): a real `canary watch --run` tested Claude Code 2.1.303 against 2.1.283 |
 | Alerts: Slack webhook and GitHub issue | Done (ADR-0008). Tested against fake transports; nothing has been sent to a real channel |
-| Verifier-lite "false success" scorer on ATIF transcripts | Done (ADR-0007), rules v2: Claude Code and Codex transcripts |
+| Verifier-lite "false success" scorer on ATIF transcripts | Done (ADR-0007), rules v3: Claude Code and Codex transcripts; 6 Codex flags hand-checked, all correct by the rule |
 | "Canary in CI" scheduled GitHub Actions example | Written (`examples/ci/agent-canary.yml`, SHA-pinned actions, persistent ledger). Not yet run on GitHub |
-| Regression-injection benchmark | Claude Code headline and caching check done ([campaign log](benchmark/campaign-log.md), [report](../benchmarks/results/campaign-2026-10.md)); replicated Codex runs in progress |
+| Regression-injection benchmark | Done for v0.1 ([campaign log](benchmark/campaign-log.md), [report](../benchmarks/results/campaign-2026-10.md)): Claude Code headline, caching check, and a replicated Codex detection rate (5 of 5, 0 of 2 false alarms) |
 
 ## Before launch
 

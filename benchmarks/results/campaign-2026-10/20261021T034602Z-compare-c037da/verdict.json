@@ -1,0 +1,289 @@
+{
+  "decision": "regression",
+  "stop_reason": "significant",
+  "alternative": "less",
+  "alpha": 0.05,
+  "e_value": 29.556700839805483,
+  "p_value": 0.03383327541933402,
+  "batches_run": 2,
+  "spent_usd": 0.287754,
+  "cost_known": true,
+  "n_pairs": 36,
+  "n_discordant": 13,
+  "n_regress": 12,
+  "n_improve": 1,
+  "dropped_pairs": 0,
+  "baseline": {
+    "pin": "codex-high",
+    "n": 36,
+    "passes": 34,
+    "errors": 0,
+    "checked": 36,
+    "claims": 11,
+    "false_success": 0,
+    "cap_hits": 0
+  },
+  "candidate": {
+    "pin": "codex-none",
+    "n": 36,
+    "passes": 23,
+    "errors": 0,
+    "checked": 36,
+    "claims": 33,
+    "false_success": 0,
+    "cap_hits": 0
+  },
+  "metrics": [
+    {
+      "metric": "cost_usd",
+      "baseline_mean": 0.00485703888888889,
+      "candidate_mean": 0.0031491350000000004,
+      "ratio": 0.648365201934878,
+      "ci_low": 0.5564099280667204,
+      "ci_high": 0.7476726826520484,
+      "n_baseline": 18,
+      "n_candidate": 18,
+      "flagged": false
+    },
+    {
+      "metric": "input_tokens",
+      "baseline_mean": 81459.77777777778,
+      "candidate_mean": 78079.05555555556,
+      "ratio": 0.9584982636284028,
+      "ci_low": 0.7509998131603665,
+      "ci_high": 1.2404915832254086,
+      "n_baseline": 18,
+      "n_candidate": 18,
+      "flagged": false
+    },
+    {
+      "metric": "cache_read_tokens",
+      "baseline_mean": 65709.44444444444,
+      "candidate_mean": 65084.38888888889,
+      "ratio": 0.9904875842302393,
+      "ci_low": 0.7257931157610088,
+      "ci_high": 1.3173251289351977,
+      "n_baseline": 18,
+      "n_candidate": 18,
+      "flagged": false
+    },
+    {
+      "metric": "cache_write_tokens",
+      "baseline_mean": 15732.0,
+      "candidate_mean": 12975.166666666666,
+      "ratio": 0.8247626917535384,
+      "ci_low": 0.7817933164653573,
+      "ci_high": 0.8746653843872803,
+      "n_baseline": 18,
+      "n_candidate": 18,
+      "flagged": false
+    },
+    {
+      "metric": "output_tokens",
+      "baseline_mean": 4463.222222222223,
+      "candidate_mean": 1748.888888888889,
+      "ratio": 0.3918444571684632,
+      "ci_low": 0.30601445886550666,
+      "ci_high": 0.4795403960861007,
+      "n_baseline": 18,
+      "n_candidate": 18,
+      "flagged": false
+    },
+    {
+      "metric": "agent_seconds",
+      "baseline_mean": 70.63849672222221,
+      "candidate_mean": 37.25301916666667,
+      "ratio": 0.5273755939790153,
+      "ci_low": 0.46045145446644575,
+      "ci_high": 0.6099446078665103,
+      "n_baseline": 18,
+      "n_candidate": 18,
+      "flagged": false
+    }
+  ],
+  "metrics_from_batch": 1,
+  "per_task": [
+    {
+      "task": "cli-grep-lite",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 0,
+      "candidate_n": 2,
+      "n_regress": 2,
+      "n_improve": 0
+    },
+    {
+      "task": "cli-short-flags",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 0,
+      "candidate_n": 2,
+      "n_regress": 2,
+      "n_improve": 0
+    },
+    {
+      "task": "coin-change-limited",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "dedupe-contacts",
+      "baseline_passes": 1,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 1
+    },
+    {
+      "task": "dependency-order",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "env-file-parser",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 1,
+      "candidate_n": 2,
+      "n_regress": 1,
+      "n_improve": 0
+    },
+    {
+      "task": "extract-registry-class",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 1,
+      "candidate_n": 2,
+      "n_regress": 1,
+      "n_improve": 0
+    },
+    {
+      "task": "format-number",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "glob-match",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "interval-set",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "invoice-rounding",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 1,
+      "candidate_n": 2,
+      "n_regress": 1,
+      "n_improve": 0
+    },
+    {
+      "task": "iso-week-report",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "money-split",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "order-state-machine",
+      "baseline_passes": 1,
+      "baseline_n": 2,
+      "candidate_passes": 0,
+      "candidate_n": 2,
+      "n_regress": 1,
+      "n_improve": 0
+    },
+    {
+      "task": "strip-comments",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 2,
+      "candidate_n": 2,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "title-case-style",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 1,
+      "candidate_n": 2,
+      "n_regress": 1,
+      "n_improve": 0
+    },
+    {
+      "task": "version-range-match",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 0,
+      "candidate_n": 2,
+      "n_regress": 2,
+      "n_improve": 0
+    },
+    {
+      "task": "wrap-quoted",
+      "baseline_passes": 2,
+      "baseline_n": 2,
+      "candidate_passes": 1,
+      "candidate_n": 2,
+      "n_regress": 1,
+      "n_improve": 0
+    }
+  ],
+  "history": [
+    {
+      "batch": 0,
+      "n_pairs": 18,
+      "n_discordant": 8,
+      "n_regress": 7,
+      "n_improve": 1,
+      "e_value": 4.9383865600000005,
+      "spent_usd": 0.143642
+    },
+    {
+      "batch": 1,
+      "n_pairs": 36,
+      "n_discordant": 13,
+      "n_regress": 12,
+      "n_improve": 1,
+      "e_value": 29.556700839805483,
+      "spent_usd": 0.287754
+    }
+  ]
+}

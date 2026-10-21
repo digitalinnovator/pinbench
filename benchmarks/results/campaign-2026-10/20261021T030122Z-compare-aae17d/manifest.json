@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "run_id": "20261021T030122Z-compare-aae17d",
+  "kind": "compare",
+  "created_at": "2026-10-21T03:01:22.967990Z",
+  "canary_version": "0.1.0.dev0",
+  "runner": {
+    "kind": "harbor",
+    "harbor_version": "0.23.0",
+    "harbor_command": [
+      "uv",
+      "run",
+      "--project",
+      "../../tools/harbor",
+      "--frozen",
+      "harbor"
+    ],
+    "environment": "docker",
+    "n_concurrent": 4
+  },
+  "suite_name": "benchmark-codex-replicated",
+  "suite_commit": "52438713c7f0ee4d6f2f73b5cd81403b0806483c",
+  "suite_dirty": false,
+  "tasks": [
+    {
+      "name": "cli-grep-lite",
+      "digest": "0dbe532183d4844213f8d932fe20b03ec27384c5b3c763631fd990809279b87e"
+    },
+    {
+      "name": "cli-short-flags",
+      "digest": "3da4bd67659742587de0c93e56cb4bdb5e12fc4b51298152d9a89489f41ff43c"
+    },
+    {
+      "name": "coin-change-limited",
+      "digest": "22fed427bc507cc4cce2299daadbf73cbf7de46f06c28e32a000904f326f6b42"
+    },
+    {
+      "name": "dedupe-contacts",
+      "digest": "4a5e10ee60f1c10f490725169034116d4723e9367200e6638b166738f119d4fc"
+    },
+    {
+      "name": "dependency-order",
+      "digest": "50eed187b9692e06d5f9ecf604e6d8c5bb5e0c577f9eb1219bffb4186e1f2696"
+    },
+    {
+      "name": "env-file-parser",
+      "digest": "cd1f0b6bf92d9357831f03df3fa8a223aba58f9affd8e575998aac6e42983c3e"
+    },
+    {
+      "name": "extract-registry-class",
+      "digest": "78a29c484861e90b7e3fc5fe27612fc06f5ebaab12bb506431154b6da6d13132"
+    },
+    {
+      "name": "format-number",
+      "digest": "9e23e9a0cada5deeb7ea83ff893de08b691bbbabbdd844854b6c32f1bfbdb90e"
+    },
+    {
+      "name": "glob-match",
+      "digest": "46db31a1b3d546bfac3da38be061d0ec8d39d4cb4c1ff0bd1712cfa6e54754bd"
+    },
+    {
+      "name": "interval-set",
+      "digest": "f9d4261a45b063c6dd5e3cdeabde91644cd1cc8ec235bfc6e91c78c594ef24ff"
+    },
+    {
+      "name": "invoice-rounding",
+      "digest": "5151634a023476ebafcbd1b6af9f68bc170e407277160f616e085e4d0c87df81"
+    },
+    {
+      "name": "iso-week-report",
+      "digest": "44525d579366350fb9852fb4d8498041be99f172d904744f16f112614e387e5e"
+    },
+    {
+      "name": "money-split",
+      "digest": "6e66e3676d9bea0033fd254e565c4760349085699008566cf67f378c9ce8c15a"
+    },
+    {
+      "name": "order-state-machine",
+      "digest": "f7e99e79c15a03b16a9a5ef714d80486d3e4d7eda61dd314d10f78391190870b"
+    },
+    {
+      "name": "strip-comments",
+      "digest": "40116d8450f2d1fac7946286207c932ecc009c790a61a57c0d01dd413a96b893"
+    },
+    {
+      "name": "title-case-style",
+      "digest": "ef7bccc789d9471bb0b49edc039900ebd35df66bef26437b8cff1e0c99619486"
+    },
+    {
+      "name": "version-range-match",
+      "digest": "09e43d6314b6080f80d802e93be15f0daf0b75ede27e10ecc328675b76d343d3"
+    },
+    {
+      "name": "wrap-quoted",
+      "digest": "e158a00be1af9d2123d94c6cd31175fdd17b5c4fe69d1cc792a1de81cec193fd"
+    }
+  ],
+  "pins": [
+    {
+      "name": "codex-high",
+      "fingerprint": "846a0ee02e1333d35af171728a581ad0732088cb2609c0b116e54c20e7d818ca",
+      "spec": {
+        "harness": "codex",
+        "version": "0.163.0",
+        "model": "openai/gpt-6-luna",
+        "options": {
+          "reasoning_effort": "high",
+          "web_search": "disabled",
+          "config": {
+            "service_tier": "default"
+          }
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": 300.0,
+        "reserve_usd": 0.05
+      }
+    },
+    {
+      "name": "codex-none",
+      "fingerprint": "1cba7c3e92734d616578abb5c057c76358b55881542fcf873f317f0ae0b6f6b1",
+      "spec": {
+        "harness": "codex",
+        "version": "0.163.0",
+        "model": "openai/gpt-6-luna",
+        "options": {
+          "reasoning_effort": "none",
+          "web_search": "disabled",
+          "config": {
+            "service_tier": "default"
+          }
+        },
+        "env": {},
+        "config_files": [],
+        "timeout_sec": 300.0,
+        "reserve_usd": 0.05
+      }
+    }
+  ],
+  "baseline": "codex-high",
+  "candidate": "codex-none",
+  "continues": null,
+  "settings": {
+    "stats": {
+      "alpha": 0.05,
+      "alternative": "less",
+      "mixture_max": 0.8,
+      "pass_threshold": 1.0,
+      "bootstrap_resamples": 2000,
+      "confidence": 0.95,
+      "cost_threshold": 0.1,
+      "warmup_batches": 1,
+      "futility_after_batches": 3,
+      "futility_min_net_regressions": 4,
+      "seed": 20260927
+    },
+    "budget": {
+      "max_usd": 2.0,
+      "max_batches": 6,
+      "attempts_per_batch": 1,
+      "inflight_allowance_usd": 0.05
+    },
+    "pricing": {
+      "version": "2026-10-18",
+      "verified": "2026-10-18",
+      "sources": {
+        "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing",
+        "openai": "https://developers.openai.com/api/docs/pricing"
+      },
+      "sha256": "a39dbd7b75c3b63ceabd92a69fbba6adc02961c96c8466dd6844478447d74f52"
+    }
+  }
+}

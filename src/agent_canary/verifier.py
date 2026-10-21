@@ -13,6 +13,7 @@ accepted cost; a full claim extractor is v0.2.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 from dataclasses import dataclass
@@ -22,7 +23,9 @@ from typing import Any, Literal
 from agent_canary.models import ClaimCheck
 
 # Bump when a rule changes, so stored verdicts can be told apart from recomputed ones.
-RULES_VERSION = 2  # 2: Codex code-mode `exec` scripts are read for shell commands and patches
+# 2: Codex code-mode `exec` scripts are read for shell commands and patches.
+# 3: Codex code-mode output, which arrives as the text of a Python list, is decoded before reading.
+RULES_VERSION = 3
 
 Outcome = Literal["passed", "failed", "unknown"]
 
@@ -227,6 +230,20 @@ def code_mode_actions(script: str) -> list[tuple[str, str]]:
     return [(kind, text) for _, kind, text in sorted(found)]
 
 
+def _content_text(value: Any) -> str:
+    """A tool result's text. Codex code mode hands over the Python repr of a list of content
+    parts, e.g. "[{'type': 'input_text', 'text': '2 passed\\n'}]", whose line breaks are escaped;
+    read as is, "\\n2 passed" has no word boundary before the count and matches nothing."""
+    if isinstance(value, str) and value.startswith("[{") and value.rstrip().endswith("}]"):
+        try:
+            parts = ast.literal_eval(value)
+        except (ValueError, SyntaxError, MemoryError, RecursionError):
+            return value
+        if isinstance(parts, list) and all(isinstance(part, dict) for part in parts):
+            return _text(parts)
+    return _text(value)
+
+
 def _result_output(result: dict[str, Any]) -> tuple[str, bool]:
     raw = result.get("extra")
     extra: dict[str, Any] = raw if isinstance(raw, dict) else {}
@@ -235,7 +252,7 @@ def _result_output(result: dict[str, Any]) -> tuple[str, bool]:
     if isinstance(use, dict) and isinstance(use.get("stdout"), str):
         output = use["stdout"] + "\n" + str(use.get("stderr") or "")
     else:
-        output = _text(result.get("content"))
+        output = _content_text(result.get("content"))
     return output, bool(extra.get("tool_result_is_error"))
 
 

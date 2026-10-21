@@ -1,0 +1,298 @@
+{
+  "decision": "inconclusive",
+  "stop_reason": "futility",
+  "alternative": "less",
+  "alpha": 0.05,
+  "e_value": 0.6339999999999997,
+  "p_value": 1.0,
+  "batches_run": 3,
+  "spent_usd": 0.550378,
+  "cost_known": true,
+  "n_pairs": 54,
+  "n_discordant": 3,
+  "n_regress": 1,
+  "n_improve": 2,
+  "dropped_pairs": 0,
+  "baseline": {
+    "pin": "codex-high",
+    "n": 54,
+    "passes": 52,
+    "errors": 0,
+    "checked": 54,
+    "claims": 17,
+    "false_success": 1,
+    "cap_hits": 0
+  },
+  "candidate": {
+    "pin": "codex-high-twin",
+    "n": 54,
+    "passes": 53,
+    "errors": 0,
+    "checked": 54,
+    "claims": 15,
+    "false_success": 0,
+    "cap_hits": 0
+  },
+  "metrics": [
+    {
+      "metric": "cost_usd",
+      "baseline_mean": 0.005334045833333333,
+      "candidate_mean": 0.005134198333333333,
+      "ratio": 0.962533599027005,
+      "ci_low": 0.9127791239987131,
+      "ci_high": 1.016217552332094,
+      "n_baseline": 36,
+      "n_candidate": 36,
+      "flagged": false
+    },
+    {
+      "metric": "input_tokens",
+      "baseline_mean": 80933.08333333333,
+      "candidate_mean": 81514.19444444444,
+      "ratio": 1.0071801429919298,
+      "ci_low": 0.906665800843629,
+      "ci_high": 1.1173881145935327,
+      "n_baseline": 36,
+      "n_candidate": 36,
+      "flagged": false
+    },
+    {
+      "metric": "cache_read_tokens",
+      "baseline_mean": 64584.833333333336,
+      "candidate_mean": 65493.833333333336,
+      "ratio": 1.01407451181779,
+      "ci_low": 0.8928954221027473,
+      "ci_high": 1.1417783560652093,
+      "n_baseline": 36,
+      "n_candidate": 36,
+      "flagged": false
+    },
+    {
+      "metric": "cache_write_tokens",
+      "baseline_mean": 16330.416666666666,
+      "candidate_mean": 16002.277777777777,
+      "ratio": 0.979906275780539,
+      "ci_low": 0.9514030644449167,
+      "ci_high": 1.0138884385341336,
+      "n_baseline": 36,
+      "n_candidate": 36,
+      "flagged": false
+    },
+    {
+      "metric": "output_tokens",
+      "baseline_mean": 5290.222222222223,
+      "candidate_mean": 4954.333333333333,
+      "ratio": 0.9365076031252624,
+      "ci_low": 0.8761571403877534,
+      "ci_high": 1.0052105340266797,
+      "n_baseline": 36,
+      "n_candidate": 36,
+      "flagged": false
+    },
+    {
+      "metric": "agent_seconds",
+      "baseline_mean": 81.31520372222222,
+      "candidate_mean": 81.71599436111111,
+      "ratio": 1.0049288524229494,
+      "ci_low": 0.9395093521881882,
+      "ci_high": 1.0819650574647726,
+      "n_baseline": 36,
+      "n_candidate": 36,
+      "flagged": false
+    }
+  ],
+  "metrics_from_batch": 1,
+  "per_task": [
+    {
+      "task": "cli-grep-lite",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "cli-short-flags",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "coin-change-limited",
+      "baseline_passes": 2,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 1
+    },
+    {
+      "task": "dedupe-contacts",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "dependency-order",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "env-file-parser",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "extract-registry-class",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "format-number",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "glob-match",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 2,
+      "candidate_n": 3,
+      "n_regress": 1,
+      "n_improve": 0
+    },
+    {
+      "task": "interval-set",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "invoice-rounding",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "iso-week-report",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "money-split",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "order-state-machine",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "strip-comments",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "title-case-style",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    },
+    {
+      "task": "version-range-match",
+      "baseline_passes": 2,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 1
+    },
+    {
+      "task": "wrap-quoted",
+      "baseline_passes": 3,
+      "baseline_n": 3,
+      "candidate_passes": 3,
+      "candidate_n": 3,
+      "n_regress": 0,
+      "n_improve": 0
+    }
+  ],
+  "history": [
+    {
+      "batch": 0,
+      "n_pairs": 18,
+      "n_discordant": 0,
+      "n_regress": 0,
+      "n_improve": 0,
+      "e_value": 1.0,
+      "spent_usd": 0.173521
+    },
+    {
+      "batch": 1,
+      "n_pairs": 36,
+      "n_discordant": 1,
+      "n_regress": 0,
+      "n_improve": 1,
+      "e_value": 0.7,
+      "spent_usd": 0.36153
+    },
+    {
+      "batch": 2,
+      "n_pairs": 54,
+      "n_discordant": 3,
+      "n_regress": 1,
+      "n_improve": 2,
+      "e_value": 0.6339999999999997,
+      "spent_usd": 0.550378
+    }
+  ]
+}

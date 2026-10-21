@@ -175,3 +175,24 @@ Codex 0.163.0 on `gpt-6-luna`, reasoning effort high against low, all 32 candida
 - **11 of 18 passed (61%)**, against 18 of 18 at high effort in step C0: a gap of about 39 points, large enough to measure a detection rate cheaply.
 - **The 300-second agent timeout was not enforced.** Two trials ran 23 and 39 minutes (`dependency-order`, `env-file-parser`). Harbor received `override_timeout_sec = 300` (it is in the trial config) and its agent phase waits with `asyncio.wait_for(…, timeout=300)`, yet no `AgentTimeoutError` was raised. In the 39-minute trial, 38 minutes passed between two model requests with no tool running: the model call itself stalled (likely Codex retrying a stalled stream on this machine's slow link). Cost stayed small ($0.007), because waiting spends no tokens.
 - **Consequence for the guardrails:** for a harness with no dollar cap, the agent timeout was meant to be the per-trial bound (ADR-0009). In Harbor 0.23.0 with Codex it is not reliable. The remaining bounds are the canary's batch watchdog (`[runner] batch_timeout_sec`, 4 hours by default), which kills the Harbor process, and the ledger, which keeps a killed batch reserved at its worst case. The roadmap records it; the root cause in Harbor is not established.
+
+## Codex replicated detection benchmark, 2026-10-21
+
+The pre-registered protocol (plan, "Codex replicated benchmark"; config `examples/benchmark-suite-codex/replicate.toml`, committed before the first run). Two streams of runs in parallel, 03:00–05:05 UTC. **Spend: $2.40 OpenAI** (expected about $3.70; worst case about $6.50). All seven runs are counted; none was repeated or dropped.
+
+| Run | Decision | Batches | Regressed / improved | E | Passed (high against candidate) | Cost |
+|---|---|---|---|---|---|---|
+| Detection 1 | regression | 2 | 14 / 0 | 128 | 36/36 against 22/36 | $0.28 |
+| Detection 2 | regression | 2 | 12 / 1 | 29.6 | 34/36 against 23/36 | $0.29 |
+| Detection 3 | regression | 1 | 10 / 0 | 26.5 | 18/18 against 8/18 | $0.16 |
+| Detection 4 | regression | 2 | 14 / 0 | 128 | 36/36 against 22/36 | $0.29 |
+| Detection 5 | regression | 2 | 14 / 0 | 128 | 35/36 against 21/36 | $0.30 |
+| Identical arms 1 | inconclusive (futility) | 3 | 1 / 2 | 0.6 | 52/54 against 53/54 | $0.55 |
+| Identical arms 2 | inconclusive (futility) | 3 | 2 / 0 | 1.7 | 54/54 against 51/53 | $0.54 |
+
+- **Detection: 5 of 5**, median 72 trials and $0.29 to flag (95% interval for the rate: 48%–100%). The three runs at E = 128 each had 14 regressed pairs and none improved.
+- **False alarms: 0 of 2.** Cost ratios ×0.96 and ×1.02, neither flagged.
+- **Effort none cost ×0.60 to ×0.66 of high.**
+- **One infrastructure error** (a `VerifierTimeoutError` on identical-arms run 2), left out of the pairs.
+- **A verifier fault, found and fixed:** Codex's tool output arrives as the text of a Python list with escaped line breaks, so the pytest summary never matched and every Codex claim read "unverifiable". Rules v3 decode it (ADR-0007). Re-checked on all campaign transcripts: 314 Codex claims moved to supported, none to false success, and no Claude Code verdict changed. The export now commits each run's re-checked verdicts (`claims.jsonl`).
+- **Claims under rules v3:** effort none claimed "tests pass" in 146 of 162 trials, and the hidden tests then failed in 61 of them; high effort claimed it in 82 of 270, with 2 failures. Six claims were flagged as not backed by a test run after the last edit. Hand-checked: all six are right by the rule. Three of the late edits changed behaviour (two logic changes, one error message), three were cosmetic (moved imports, reworded docstrings); the hidden tests passed in all six.

@@ -292,3 +292,37 @@ def test_real_codex_transcript_reads_its_edit_and_no_test_run() -> None:
     check = check_trajectory(json.loads(CODEX_REAL.read_text()))
     assert check.verdict == "no_claim"
     assert check.n_test_runs == 0  # the agent only inspected files and printed them
+
+
+CODEX_REAL_CLAIM = FIXTURES / "harbor" / "codex-code-mode-claim" / "trajectory.json"
+# What Codex 0.163.0 code mode hands back: the Python repr of a list of content parts.
+_CODEX_OUTPUT = (
+    "[{'type': 'input_text', 'text': 'Script completed\\nWall time 5.1 seconds\\nOutput:\\n'}, "
+    "{'type': 'input_text', 'text': '..{0}[100%]\\n{1} in 0.21s\\n'}]"
+)
+
+
+def test_codex_code_mode_output_is_decoded() -> None:
+    patch = 'await tools.apply_patch("*** Begin Patch\\n*** End Patch");'
+    test = 'await tools.exec_command({cmd:"python -m pytest -q"});'
+    passed = _CODEX_OUTPUT.replace("{0}", " " * 8).replace("{1}", "2 passed")
+    failed = _CODEX_OUTPUT.replace("{0}", " " * 8).replace("{1}", "1 failed, 1 passed")
+    check = _check(_exec(1, patch), _exec(2, test, passed), _say(3, "All tests pass."))
+    assert check.verdict == "supported"
+    check = _check(_exec(1, patch), _exec(2, test, failed), _say(3, "All tests pass."))
+    assert (check.verdict, check.reason) == ("false_success", "test_run_failed")
+
+
+def test_content_that_only_looks_like_a_list_is_read_as_text() -> None:
+    from agent_canary.verifier import _content_text
+
+    assert _content_text("[{not python}] 3 passed") == "[{not python}] 3 passed"
+    assert _content_text("[{'a': __import__('os')}]") == "[{'a': __import__('os')}]"
+    assert _content_text("[{1: 2}, 3]") == "[{1: 2}, 3]"
+
+
+def test_real_codex_claim_is_supported_by_its_pytest_run() -> None:
+    check = check_trajectory(json.loads(CODEX_REAL_CLAIM.read_text()))
+    assert check.verdict == "supported"
+    assert check.evidence_command == "python -m pytest -q"
+    assert (check.last_edit_step, check.evidence_step, check.claim_step) == (8, 9, 10)

@@ -14,20 +14,24 @@ Anthropic's [2026-04-23 postmortem](https://www.anthropic.com/engineering/april-
 
 ## Headline benchmark
 
-One pre-registered campaign on the canary's own [18-task suite](examples/benchmark-suite/), October 2026, on a fixed budget of about $20 of API credit. Every number below is rebuilt from committed evidence by [`benchmarks/campaign_report.py`](benchmarks/campaign_report.py) into [`campaign-2026-10.md`](benchmarks/results/campaign-2026-10.md); the [campaign log](docs/benchmark/campaign-log.md) has each step and its gates.
+One pre-registered campaign on the canary's own [18-task suite](examples/benchmark-suite/), October 2026, on a fixed budget of about $25 of API credit (about $18.45 Anthropic, $3.05 OpenAI spent). Every number below is rebuilt from committed evidence by [`benchmarks/campaign_report.py`](benchmarks/campaign_report.py) into [`campaign-2026-10.md`](benchmarks/results/campaign-2026-10.md); the [campaign log](docs/benchmark/campaign-log.md) has each step and its gates.
 
 | Injected regression (postmortem analogue) | Harness and model | Result | Trials | Cost |
 |---|---|---|---|---|
 | Reasoning effort high → low (default effort lowered, 4 March) | Claude Code 2.1.283, Sonnet 5, 10 tasks | Pass rate 63% → 45%. **Not flagged** by the anytime-valid test (E = 11.3 against 20). A one-look test at the pre-registered 5 batches gives p = 0.025 | 120 | $13.00 |
 | | | Cost ×0.62, output ×0.42, agent time ×0.65 (all 95% intervals exclude 1) | | |
 | Prompt caching off (thinking-block caching bug, 26 March) | Claude Code 2.1.283, Haiku 4.5, 6 tasks | **Cost ×2.63, flagged** (95% interval 1.75–4.10) after one batch | 12 | $1.75 |
+| Reasoning effort high → none, replicated 5 times | Codex 0.163.0, `gpt-6-luna`, 18 tasks | Pass rate 98% → 59%. **Flagged in 5 of 5 runs**, after a median of 72 trials and $0.29 | 324 | $1.32 |
+| Identical arms (no regression), 2 runs | Codex 0.163.0, `gpt-6-luna`, 18 tasks | **Flagged in 0 of 2 runs**; both stopped at the futility look | 216 | $1.09 |
 
 Read it this way:
 
 - **The cost regression is caught cheaply. The pass-rate regression, at this size, is not.** An 18-point drop on 10 tasks took the sequential test to E = 11.3 after 6 batches. At the observed rates it needs about 10 batches (about $22) to flag 80% of the time (simulated). The price of being allowed to look after every batch is needing more evidence than a test that looks once.
-- **This is one run, not a detection rate.** It shows what the canary concluded on one budget, not how often it would.
+- **The Claude Code result is one run, not a detection rate.** It shows what the canary concluded on one budget, not how often it would.
+- **The Codex replication is a detection rate, for a much larger drop.** Codex trials cost about $0.004, so the same protocol ran five times: every run flagged a 39-point drop within one or two batches, for under $0.31 each. Five of five still allows a true rate as low as 48% (95% interval), and the two identical-arm runs say little about false alarms; the test's guarantee (at most 5%) does.
 - **The real harness showed about 0.6 of the effect** that a free pre-screen predicted (18 points against about 31), with the same baseline difficulty (67% against 66%).
-- **Low effort claimed "tests pass" far more often and was wrong far more often.** It claimed so in 55 of 60 trials and then failed the hidden tests in 29 of them; high effort claimed it 33 times, with 9 such failures. None of these claims was false by the verifier's rule (each had a passing test run after the last edit): the agent's own checks were weaker than the hidden tests.
+- **Lower effort claimed "tests pass" more often and was wrong more often, on both harnesses.** Sonnet 5 at low effort claimed it in 55 of 60 trials and then failed the hidden tests in 29; at high effort, 33 claims and 9 such failures. Codex at effort none claimed it in 146 of 162 trials, with 61 hidden-test failures; at high effort, 82 claims in 270 trials and 2 failures. Almost every claim was backed by a passing test run after the last edit: the agents' own checks were weaker than the hidden tests.
+- **The verifier flagged 6 Codex claims, all correctly by its rule:** each time the agent edited after its last test run and then said the tests passed. Three of those edits changed behaviour; three were cosmetic. In all six the hidden tests passed.
 
 Also verified on real trials:
 
@@ -35,7 +39,7 @@ Also verified on real trials:
 - **Re-priced cost equals harness-reported cost** on every trial, for Opus 5, Sonnet 5, Haiku 4.5 and `gpt-6-luna`.
 - **A real release check works.** 2.1.283 against 2.1.303, one Harbor job per version, each trial proving its version from its own transcript.
 - **The March–April 2026 builds (2.1.66, 2.1.85, 2.1.112) still run** against today's API.
-- **Codex 0.163.0 runs through the canary** on `gpt-6-luna` at about $0.005 a trial. It solved 63 of 64 attempts at high effort and 60 of 64 at low on all 32 tasks, so this suite (tuned against Sonnet 5) has no headroom for it. Low effort still cut Codex's cost to ×0.58 and its time to ×0.64.
+- **Codex 0.163.0 runs through the canary** on `gpt-6-luna` at about $0.005 a trial. It solved 63 of 64 attempts at high effort and 60 of 64 at low on all 32 tasks, so this suite (tuned against Sonnet 5) has no headroom for that cut; hence effort none in the replication. Low effort still cut Codex's cost to ×0.58 and its time to ×0.64.
 
 The design behind these numbers is in the [benchmark plan](docs/benchmark/plan.md). A free [pre-screen](docs/benchmark/prescreen.md) chose the tasks before any trial was paid for.
 
@@ -137,8 +141,9 @@ options = { reasoning_effort = "high", max_budget_usd = "1.00" }
 - Cost is **re-priced from token usage** with a dated price table in this repo, so a harness that changes its bundled prices does not look like a regression ([ADR-0005](docs/adr/0005-cost-normalisation.md)). The table covers Anthropic models at first-party API prices; anything else falls back to the harness's own estimate and the report says so.
 - **Prompt-cache state moves cost.** A configuration's first trials pay a cache write that later ones do not. On small suites set `[stats] warmup_batches = 1`, and read a cost ratio together with `cache_write_tokens`.
 - Cost and latency intervals are fixed-sample at the stopping time and are too narrow with fewer than about 20 tasks.
-- The false-success check favours precision: it misses hedged or unusual claims, reads test-runner output and not exit codes, and is verified on Claude Code transcripts only.
+- The false-success check favours precision: it misses hedged or unusual claims, reads test-runner output and not exit codes, and is verified on Claude Code and Codex transcripts only.
 - Tasks that always pass or always fail cost money and add no evidence. The report shows which tasks were discordant.
+- **Harbor 0.23.0 did not enforce the agent timeout for Codex:** two trials ran 23 and 39 minutes under a 300-second limit. Waiting costs no tokens, and the canary's batch watchdog and ledger still bound the run, but a trial can take far longer than configured.
 
 ## Alternatives
 
