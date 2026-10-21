@@ -142,14 +142,17 @@ options = { reasoning_effort = "high", max_budget_usd = "1.00" }
 
 ## Alternatives
 
-A dated comparison, re-checked on 2026-09-27, is in [docs/research/2026-09-27-competitive-recheck.md](docs/research/2026-09-27-competitive-recheck.md). In short:
+A dated comparison, re-checked on 2026-10-21 against each project's own source, is in [docs/research/2026-10-21-competitive-recheck.md](docs/research/2026-10-21-competitive-recheck.md). Every piece of this project now exists somewhere; the combination does not. In short:
 
-- **Harbor and Margin Eval** are runners. This project builds on Harbor rather than competing with it.
-- **MarginLab** tracks a public SWE-Bench-Pro subset.
-- **UiPath coder_eval** runs A/B experiments on your own tasks with fixed-sample statistics.
-- **config-drift-checker** watches Claude Code releases against config-level evals.
+- **[UiPath/coder_eval](https://github.com/UiPath/coder_eval)** is the closest in practice: your own tasks, several harnesses, a Harbor export, re-priced cost and fixed-sample statistics. It has no release triggers, no sequential test and no alerts.
+- **[dshakes/halos](https://github.com/dshakes/halos)** is the closest in concept: a harness × version × model matrix, npm release watching and a paired bootstrap on a private suite. Its sequential test applies to live traffic, not to the suite.
+- **[config-drift-checker](https://github.com/jameskomo/config-drift-checker)** watches Claude Code releases against config-level evals (FSL licence).
+- **[Harbor](https://github.com/harbor-framework/harbor)** is the runner this project builds on; its statistics are still in open pull requests.
+- **[arbiter](https://github.com/TITANS-COVENANT/arbiter)** gates CI with a sequential McNemar test, without harness adapters, triggers or cost.
+- **[Promptfoo](https://github.com/promptfoo/promptfoo)** (owned by OpenAI) and Anthropic's `claude plugin eval` are vendor tooling; this project measures harnesses without belonging to a vendor whose harness it measures.
+- **MarginLab and AIStupidLevel** track public suites or models, not your tasks on pinned harness versions.
 
-No project found combines private suites, a harness-version matrix, sequential stopping, cost intervals and Apache-2.0 licensing. Re-verify before relying on this: the space moves weekly.
+What this project combines in one Apache-2.0 tool: private suites; exact pinned versions of Claude Code, Codex and OpenCode through Harbor; release and cron triggers; an anytime-valid test on suite pass rate; intervals on re-priced cost; a deterministic "tests pass" verifier; a lifetime spending ledger; checksummed run bundles; alerts. Re-verify before relying on this: the space moves weekly.
 
 ## Contributing
 
