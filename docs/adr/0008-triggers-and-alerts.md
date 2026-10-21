@@ -5,7 +5,7 @@
 
 ## Context
 
-The brief asks for two triggers (cron, and detection of new harness releases) and two alert channels (Slack and GitHub issues). pinbench is a CLI with no daemon, and v0.1 must not grow one. Alerts carry credentials, and a pinbench run spends money, so both need clear failure rules:
+The v0.1 scope asks for two triggers (cron, and detection of new harness releases) and two alert channels (Slack and GitHub issues). pinbench is a CLI with no daemon, and v0.1 must not grow one. Alerts carry credentials, and a pinbench run spends money, so both need clear failure rules:
 
 - A scheduled job that re-tests the same release every day burns the budget for no new information.
 - An alert that fails to send must not change or hide a verdict.

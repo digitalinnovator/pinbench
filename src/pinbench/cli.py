@@ -315,7 +315,8 @@ def _compare(
         f"{v.decision.upper()}  E={v.e_value:.3g} (threshold {1 / v.alpha:g})  p<={v.p_value:.3g}  "
         f"stop={v.stop_reason}  batches={v.batches_run}  "
         # Without a real cost for every trial the figure includes trials charged at their cap.
-        f"spent{'=' if v.cost_known or not v.spent_usd else '<='}${v.spent_usd:.2f}",
+        f"spent{'=' if v.cost_known or not v.spent_usd else '<='}${v.spent_usd:.2f}"
+        + ("" if getattr(runner, "spends_money", False) else " (simulated)"),
         fg=colour,
     )
     typer.echo(

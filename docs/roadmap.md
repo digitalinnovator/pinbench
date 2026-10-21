@@ -1,6 +1,6 @@
 # Roadmap
 
-The v0.1 scope comes from the project brief. Anything outside it is parked under "Later" until v0.1 ships with its benchmark.
+The v0.1 scope was fixed at the start of the project. Anything outside it is parked under "Later" until v0.1 ships with its benchmark.
 
 ## v0.1: status as of 2026-10-21
 
@@ -17,7 +17,7 @@ The v0.1 scope comes from the project brief. Anything outside it is parked under
 | Budget caps (soft `max_usd` per run; hard lifetime ledger per credit pool; per-trial caps) | Done (ADR-0009); held on every real run of the October campaign |
 | Immutable run bundles and SQLite index | Done (ADR-0004) |
 | Static HTML report with per-task trace drill-down (ATIF) | Done; transcripts from real Claude Code and Codex trials render |
-| Cost normalisation from tokens with a pinned price table | Done (ADR-0005): Anthropic and OpenAI prices; equals the harness-reported cost on every real trial |
+| Cost normalisation from tokens with a pinned price table | Done (ADR-0005): Anthropic and OpenAI prices; matches the harness-reported cost on 879 of 882 committed trials |
 | Triggers: cron and new-release detection (npm dist-tags) | Done (ADR-0008): a real `pinbench watch --run` tested Claude Code 2.1.303 against 2.1.283 |
 | Alerts: Slack webhook and GitHub issue | Done (ADR-0008). Tested against fake transports; nothing has been sent to a real channel |
 | Verifier-lite "false success" scorer on ATIF transcripts | Done (ADR-0007), rules v3: Claude Code and Codex transcripts; 6 Codex flags hand-checked, all correct by the rule |
@@ -26,14 +26,16 @@ The v0.1 scope comes from the project brief. Anything outside it is parked under
 
 ## Before launch
 
-- **A demo GIF** for the README (the launch shape asks for one): a `pinbench compare` run and its report.
-- **The name is decided: `pinbench`** ([ADR-0010](adr/0010-name-pinbench.md)). Check the trademark register before launch.
-- **Publishing the full run bundles** (about 70 MB of transcripts) as a release asset, so anyone can re-verify the committed evidence files against them. Needs the owner's decision.
+- **The demo GIF** is a recording of the simulated compare. A recording of a real Claude Code run and its HTML report would be stronger.
+- **The name is decided: `pinbench`** ([ADR-0010](adr/0010-name-pinbench.md)), despite an unrelated PinBench organisation and domain. Check the trademark register before wider promotion.
+- **Publishing the full run bundles** (about 70 MB of transcripts) as a release asset, so anyone can re-verify the committed evidence files against them. Not done: each Claude Code trial also holds harness session files with account identifiers (`agent/sessions/`), which must be left out first.
 - **Re-verify the competitive comparison** on the day of launch.
+- **The verbosity regression** (one of the postmortem's three changes) has had only a smoke trial; measuring it on Haiku 4.5 would cost about $1–2.
 
 ## Known limitations to address
 
-- **Harbor 0.23.0 did not enforce the agent timeout for Codex.** Two Codex trials ran 23 and 39 minutes under a 300-second `override_timeout_sec` (campaign log, probe). For harnesses with no dollar cap the timeout was meant to bound each trial; until the cause is found, rely on `[runner] batch_timeout_sec` and the ledger, and report it upstream (owner's decision).
+- **Harbor 0.23.0 did not enforce the agent timeout for Codex.** Two Codex trials ran 23 and 39 minutes under a 300-second `override_timeout_sec` (campaign log, probe). For harnesses with no dollar cap the timeout was meant to bound each trial; until the cause is found, rely on `[runner] batch_timeout_sec` and the ledger, and report it upstream.
+- **Three re-priced costs differ from the harness's own figure.** Three Sonnet 5 trials of the headline run re-priced 4–14% below the cost Claude Code reported (campaign report, re-pricing check). The cause is not yet known.
 - **A pass-rate drop of 18 points on 10 tasks was not flagged within 6 batches** (campaign log, step 7). The anytime-valid test pays for its freedom to look after every batch with more evidence than a one-look test needs. A suite of 25–50 tasks, or several attempts per task per batch, would detect such drops at a cost a team can choose.
 - **A per-trial dollar cap can act as a treatment.** A capped trial is scored on whatever it had finished, which is usually a failure. Use the same `max_budget_usd` and `max_turns` on both arms; the report counts cap hits per arm.
 - **`--effort` is ignored on Haiku 4.5.** Claude Code drops it silently, so an effort comparison on that model is an A/A run. `pinbench validate` warns about it.
@@ -51,7 +53,7 @@ The v0.1 scope comes from the project brief. Anything outside it is parked under
 - "History mode": test a candidate against stored baseline runs for cheap daily monitoring, accepting drift risk explicitly.
 - Ease the five benchmark tasks that no Sonnet 5 pre-screen attempt passed (`human-bytes`, `log-window-count`, `monthly-recurrence`, `pagination-cursor`, `range-list`). Codex passes them, so they are solvable as written.
 - Multi-step Harbor tasks (`[[steps]]`): refused for now, because each step gets a fresh spend cap and its cost is not read (ADR-0009).
-- LLM-judge scoring with caching and small-to-large cascades (v0.2 per the brief).
+- LLM-judge scoring with caching and small-to-large cascades (planned for v0.2).
 - A false-success dataset: run `pinbench claims` over the benchmark's bundles and publish the rate per harness and effort level, with hand-labelled precision for the flags. No public dataset exists.
 - A full claim extractor for the verifier (v0.2).
 - OpenTelemetry spans per batch and trial; ingesting harness OTel (Claude Code and Codex emit token and cost events).

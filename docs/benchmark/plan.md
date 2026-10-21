@@ -2,9 +2,9 @@
 
 > The project was renamed from "agent canary" to **pinbench** on 2026-10-21 ([ADR-0010](../adr/0010-name-pinbench.md)). This record keeps the names used at the time: `canary` is now `pinbench`, and `canary.toml` is `pinbench.toml`.
 
-The benchmark is the launch (see the portfolio principles). This plan fixes the protocol before any money is spent, so the published numbers cannot be tuned after the fact.
+The benchmark is the launch. This plan fixes the protocol before any money is spent, so the published numbers cannot be tuned after the fact.
 
-- Status: **draft, not yet approved by the owner.** Nothing in it has been spent.
+- Status: **approved and run**, 2026-10-19 to 2026-10-21. What happened at each step, including where the run departed from this plan, is in the [campaign log](campaign-log.md).
 - Revised 2026-09-30, and again on 2026-10-19 after a free pre-screen of the tasks. The first version assumed $0.50 per trial and $5k–10k in total. Real trials cost far less, and the available credit is small, so the design below replaces it.
 
 ## Question
@@ -124,7 +124,7 @@ The selection rule and the per-task pre-screen results are fixed in [prescreen.m
 
 - Codex and OpenCode have no per-trial dollar cap. The bound is the agent timeout, and the worst-case figure ($4.56 for these 15 trials, from an estimated runaway rate) is an estimate, not an enforced limit. That is why the ledger limit is $9.00 and not $14.
 - Stop all OpenAI runs if any trial costs more than $0.05, or if the first trial is billed at the priority tier.
-- **Optional, the owner's decision after X1:** a Codex effort comparison on 12 tasks, about $1.50–5.00. It is offered only if X1 shows a dearest trial under $0.03 and the verifier reads the transcripts.
+- **Optional, decided after X1:** a Codex effort comparison on 12 tasks, about $1.50–5.00. It is offered only if X1 shows a dearest trial under $0.03 and the verifier reads the transcripts.
 - OpenAI prices were read from the official pricing page on 2026-09-30 and confirmed unchanged on 2026-10-18. Re-verify them before any spend.
 
 ## Codex replicated benchmark (OpenAI pool), fixed 2026-10-21 before its first run
@@ -158,7 +158,7 @@ One Claude Code run cannot say how often the canary detects a regression. Codex 
 - That the canary would have caught the real incident. The timeline replay is not funded.
 - Any Codex regression result, unless the optional comparison is run.
 
-## Open decisions for the owner
+## Open decisions (as of the plan; resolved in the campaign log)
 
 1. Is a Sonnet 5 headline acceptable? The same design on Opus 5.5 costs about 1.6 times as much and does not fit.
 2. Is "not flagged within 180 trials" an acceptable launch headline if that is the result?

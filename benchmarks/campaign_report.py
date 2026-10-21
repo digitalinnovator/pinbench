@@ -9,7 +9,7 @@ the verdicts next to them (`claims.jsonl`), because a bundle keeps the verdicts 
 with.
 The report is then built from those committed files alone, so anyone can rebuild it:
 
-    uv run python benchmarks/campaign_report.py export    # from local bundles (owner's machine)
+    uv run python benchmarks/campaign_report.py export    # from the local run bundles
     uv run python benchmarks/campaign_report.py report    # from the committed files; writes the .md
 
 Every number in the README's benchmark section comes from the report this writes.
@@ -90,7 +90,7 @@ STEPS = [
     ),
     Step(
         "7-extension",
-        "Headline: pre-registered extra batch 5",
+        "Headline: extra batch 5 (planned; run before step 6)",
         "examples/benchmark-suite",
         "20261020T195046Z-compare-3053f5",
     ),
@@ -374,6 +374,7 @@ def report() -> str:
                 f"{t.get('harness_stop') or '—'} | {_money(_cost(t))} |"
             )
     w("")
+    w(_repricing(data))
     _s, _m2, _t2, v2 = data["2-release"]
     assert v2 is not None
     w(
@@ -468,6 +469,17 @@ def _replicated(data: dict[str, Any]) -> str:
             f"{_money(v['history'][-1]['spent_usd'])} |"
         )
     w("")
+    for label, keys in (("Detection runs", DETECTION), ("Identical-arm runs", IDENTICAL)):
+        vs = [data[k][3] for k in keys]
+        ts = [t for k in keys for t in data[k][2]]
+        bp, bn = sum(v["baseline"]["passes"] for v in vs), sum(v["baseline"]["n"] for v in vs)
+        cp, cn = sum(v["candidate"]["passes"] for v in vs), sum(v["candidate"]["n"] for v in vs)
+        total = sum(_cost(t) for t in ts)
+        w(
+            f"- **{label}, pooled:** {bp}/{bn} ({100 * bp / bn:.0f}%) against {cp}/{cn} "
+            f"({100 * cp / cn:.0f}%); {len(ts)} trials, {_money(total)} "
+            f"({_money(total / len(ts))} per trial)."
+        )
     det = [data[k][3] for k in DETECTION]
     flagged = [v for v in det if v["decision"] == "regression"]
     k, n = len(flagged), len(det)
@@ -524,6 +536,28 @@ def _replicated(data: dict[str, Any]) -> str:
     )
     w("")
     return "\n".join(out)
+
+
+def _repricing(data: dict[str, Any]) -> str:
+    """How often the re-priced cost (ADR-0005) equals the cost the harness reported."""
+    both = [
+        t
+        for _s, _m, ts, _v in data.values()
+        for t in ts
+        if t.get("cost_usd") is not None and t.get("reported_cost_usd") is not None
+    ]
+    off = [t for t in both if abs(t["cost_usd"] - t["reported_cost_usd"]) > 0.0005]
+    lines = [
+        f"Re-priced cost against harness-reported cost: {len(both) - len(off)} of {len(both)} "
+        "trials with both figures agree within $0.0005."
+    ]
+    for t in off:
+        diff = t["cost_usd"] / t["reported_cost_usd"] - 1
+        lines.append(
+            f"- `{t['trial_name']}` (`{t['pin']}`): re-priced {_money(t['cost_usd'])}, reported "
+            f"{_money(t['reported_cost_usd'])} ({100 * diff:+.0f}%)."
+        )
+    return "\n".join(lines) + "\n"
 
 
 def main() -> None:

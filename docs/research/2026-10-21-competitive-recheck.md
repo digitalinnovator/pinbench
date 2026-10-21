@@ -116,43 +116,14 @@ Closest overlaps first. Items marked "missed" existed before 2026-09-27 but were
   - Its docs claim that "no benchmark harness offers a significance-aware gate over held-out, executable verification".
 - **[Artificial Analysis Optima](https://artificialanalysis.ai/optima)** (missed; 2026-08-13). Custom, LLM-judged benchmarks on your own data, comparing models on quality and cost per task. Its pages name no harness and mention no scheduling or alerts.
 
-## Implications
+## Summary
 
-1. **The full combination is still unowned, but the gap is now narrow.** No project read today combines all eight pieces: private suites, a harness-version matrix, release and cron triggers, an anytime-valid sequential test, cost intervals, alerts, a false-success verifier and Apache-2.0.
-   - Halos comes closest. It has private suites, the matrix, release triggers, cost intervals, partial alerts and Apache-2.0.
-   - What remains unowned in one tool:
-     - an anytime-valid test on suite pass rate
-     - a deterministic "tests pass" verifier
-     - Claude Code, Codex and OpenCode together through Harbor
-     - cost re-priced from tokens, alongside cost intervals
-     - a lifetime spend ledger
-     - checksummed run bundles
-2. **coder_eval is still the biggest threat.**
-   - It has the most overlap with real adoption: 153 stars, weekly releases and a corporate owner.
-   - It already integrates with Harbor, pins and records the harness CLI version, re-prices cost, caps spend per task and documents cron runs.
-   - A harness-version axis is cheap for it to add, because its Dockerfile already takes the version as a build ARG.
-   - Halos is the closest concept but has 0 stars and one maintainer.
-   - Promptfoo is the distribution threat: OpenAI owns it, it has 26.2k stars and it already runs all three harness SDKs.
-   - Harbor would move much closer if any of the open statistics PRs were merged. Watch #517, #2361, #2714 and #1330.
-3. **Claims the launch README must not make.** Each of these now exists elsewhere:
-   - First to watch releases and bisect: SLP-DEV1/claude-code-canary.
-   - First with a harness × version × model matrix and release triggers: Halos, and config-drift-checker for Claude Code.
-   - First with sequential stopping for agent evals: arbiter.
-   - First to detect false test claims: Imbue Vet markets this, and nerf-watch detects phantom edits deterministically.
-   - First self-hosted private-suite canary: vibecheck.
-   - First to re-price cost from tokens: Harbor, coder_eval, openbench, SelfBench, FrontierHarness and HarnessTax.
-4. **Where to differentiate in the launch README:**
-   - **The combination**, in one Apache-2.0 tool on top of Harbor, covering Claude Code, Codex and OpenCode at exact pinned versions. Compare FSL (config-drift-checker) and AGPL (Margin Eval, Vet).
-   - **Sequential testing on suite pass rate, measured honestly.**
-     - Compare a mixture e-process against arbiter's simple-alternative SPRT, and against fixed-sample tests repeated on sliding windows. MarginLab and vibecheck do this repeated testing without correction.
-     - Report detection power against runs and dollars on the three injected postmortem regressions.
-     - Use Anthropic's 1/√(n·R) noise floor as a stated baseline.
-   - **A deterministic "tests pass" verifier**: a test-runner tool call that exits 0 after the last edit. Report false-success rates per harness version. Vet's check is an LLM judgement, and nerf-watch checks only edit claims.
-   - **Cost governance of the canary itself**: cluster-bootstrap intervals on re-priced cost, plus a lifetime ledger. Config-drift-checker's own public observatory went over its monthly cap ($15.19 of $15).
-   - **Independence**: Anthropic (plugin eval, claude-api skill) and OpenAI (Promptfoo) each now ship eval tooling. The canary does not belong to a vendor whose harness it measures.
-   - **The harness efficiency index**: frame it as a time series with versions attributed, not as a snapshot. Artificial Analysis, HarnessTax and FrontierHarness already publish snapshots. Artificial Analysis pools several harness versions into one row in 10 of 42 rows, and shows "Harness Comparison: Coming soon".
-5. **Name collision is now concrete.** The runcanary.ai CLI installs a binary named `canary`, the same command as this project's `[project.scripts] canary`. Decide on a rename or record the choice in an ADR before launch.
-   - **Added after the sweep (checked 2026-10-21):** the PyPI name `agent-canary` is taken, by an unrelated scanner for unguarded tool calls (`Diplomat-agents/agent-canary`, 0.1.0). So the distribution name has to change whatever the command is called.
+- **No project read on this date combines** private suites, a harness-version matrix, release and cron triggers, an anytime-valid test on suite pass rate, intervals on re-priced cost, alerts, a deterministic "tests pass" verifier and an Apache-2.0 licence. Each piece exists somewhere.
+- **Closest in practice: coder_eval.** It integrates with Harbor, pins and records the harness CLI version, re-prices cost, caps spend per task and documents cron runs. Its statistics are fixed-sample; it has no release triggers, sequential test or alerts.
+- **Closest in concept: halos.** It has a harness × version × model matrix, npm release watching and a paired bootstrap on a private suite. Its sequential test applies to live traffic, not to the suite.
+- **Harbor** would move closer if one of its open statistics pull requests (#517, #2361, #2714) were merged.
+- **Prior art for single pieces:** release watching and bisection (SLP-DEV1/claude-code-canary); sequential stopping for agent evals (arbiter); false-claim detection (Imbue Vet, with an LLM judge; nerf-watch, for edit claims); a self-hosted private-suite canary (vibecheck); cost re-priced from tokens (Harbor, coder_eval, openbench, SelfBench, FrontierHarness, HarnessTax).
+- **Naming.** The runcanary.ai CLI installs a binary named `canary`, and the PyPI name `agent-canary` is taken (by `Diplomat-agents/agent-canary`, an unrelated scanner). The project was renamed to pinbench ([ADR-0010](../adr/0010-name-pinbench.md)).
 
 ## Added after the sweep
 

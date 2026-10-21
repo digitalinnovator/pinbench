@@ -1,5 +1,7 @@
-# Scheduled "pinbench in CI" example. Copy to .github/workflows/ in the repository that holds your
-# task suite and adjust the paths. It is kept outside .github/ here so it does not run in this repo.
+# Scheduled "pinbench in CI" example. Not yet run on GitHub. It runs inside a clone of the pinbench
+# repository (it uses `make dev` and the Harbor env under tools/), with your task suite in that clone:
+# copy it to .github/workflows/ there and point SUITE at your suite. It is kept outside .github/ here so
+# it does not run in this repo.
 #
 # Every day it asks npm whether the watched harness has a newer release than your baseline pin.
 # If so, it compares the two on your suite, within the budget in pinbench.toml, and alerts.
@@ -84,7 +86,9 @@ jobs:
         if: always()
         run: |
           if [ -d "$SUITE/.pinbench/runs" ]; then
-            tar -czf pinbench-evidence.tgz -C "$SUITE/.pinbench" runs reports
+            # Harness session files hold account identifiers; never upload them. Artifacts of a
+            # public repository can be downloaded by any signed-in GitHub user.
+            tar -czf pinbench-evidence.tgz --exclude="*/agent/sessions" -C "$SUITE/.pinbench" runs reports
           fi
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always() && hashFiles('pinbench-evidence.tgz') != ''

@@ -1,6 +1,6 @@
 # Competitive re-check: private-suite harness monitors (2026-09-27)
 
-This follows up the "search again" open question in the brief. Star counts come from the GitHub API on 2026-09-27. "No" means the feature was not found in the README or docs. **Re-verify every row before it appears in a README comparison table.**
+This follows up an open question from the start of the project: has anyone launched a private-suite harness monitor? Star counts come from the GitHub API on 2026-09-27. "No" means the feature was not found in the README or docs. **Re-verify every row before it appears in a README comparison table.**
 
 ## Known players
 
@@ -40,9 +40,9 @@ This follows up the "search again" open question in the brief. Star counts come 
    - alerts
    - Apache-2.0
 2. **The gap is narrower than the 2026-09-27 report said.** Each piece now exists in some young project.
-3. **The biggest threat is coder_eval.** It is corporate-backed, ships weekly and already has most of the execution and statistics surface. The next threats are config-drift-checker (the exact concept, config-scoped) and Harbor Hub (execution plus hosting).
-4. **Where to differentiate:**
+3. **The closest overlap is coder_eval.** It is corporate-backed, ships weekly and already has most of the execution and statistics surface. The next closest are config-drift-checker (the exact concept, config-scoped) and Harbor Hub (execution plus hosting).
+4. **Differences worth measuring:**
    - Detection power per dollar: the anytime-valid sequential test (ADR-0003) and a published regression-injection benchmark.
    - Harness-version attribution through the version matrix.
    - The deterministic false-success verifier.
-5. **Open decision for the owner:** the working name "canary" collides with at least one YC company and two repos.
+5. **Open decision:** the working name "canary" collides with at least one YC company and two repos.

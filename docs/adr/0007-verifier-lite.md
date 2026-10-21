@@ -7,7 +7,7 @@
 
 A canary that only counts hidden-test passes misses a failure users feel directly: the agent reports "all tests pass" when it never ran them, ran them before its last edit, or ran them and they failed. The brief calls this *false success* and asks for a deterministic scorer in v0.1, with LLM judging and a full claim extractor deferred to v0.2.
 
-The brief's first wording was "no matching test-runner call exiting 0 after the last edit". Spike 0001 showed that exit codes cannot carry this rule:
+The rule's first wording was "no matching test-runner call exiting 0 after the last edit". Spike 0001 showed that exit codes cannot carry this rule:
 
 - Claude Code's ATIF transcript has no numeric exit code, only `is_error`.
 - Agents pipe test output (`python -m pytest -q … 2>&1 | tail -3`), so the shell status is `tail`'s.

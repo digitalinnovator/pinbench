@@ -7,7 +7,7 @@
 
 pinbench schedules runs of coding-agent harnesses, stores the results, runs statistics over them and renders reports. Its neighbours in the evaluation ecosystem (Harbor, Inspect, SWE-bench, Margin Eval's analysis tooling) are Python. The statistics it needs are sequential tests and bootstrap intervals, which are standard in SciPy and NumPy.
 
-Constraints from the project brief:
+Constraints:
 
 - Typed code, tests from the first commit, CI on every push.
 - Lockfiles and pinned dependencies, one-command dev setup, no secrets in the repo.
@@ -43,7 +43,7 @@ Runtime dependencies are pinned exactly in `pyproject.toml`, because this is an 
 
 ## Alternatives considered
 
-- **DuckDB as the store.** It is better for analytics, but it adds a native binary dependency and has weaker concurrent-writer semantics. The brief allowed either. SQLite wins on supply chain and simplicity for an index that can be rebuilt. Revisit if the index grows past about 10M rows.
+- **DuckDB as the store.** It is better for analytics, but it adds a native binary dependency and has weaker concurrent-writer semantics. Either would have met the constraints. SQLite wins on supply chain and simplicity for an index that can be rebuilt. Revisit if the index grows past about 10M rows.
 - **Go.** A single static binary is attractive for a CI tool. It would lose SciPy, direct reuse of Harbor's Python ecosystem, and the contributor pool that already writes Python evaluations.
 - **TypeScript.** The harnesses ship as npm packages, but its statistics ecosystem is thin and Harbor is Python.
 - **Postgres or a hosted store.** A hosted service is a non-goal for v0.1.

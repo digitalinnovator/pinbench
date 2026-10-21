@@ -1,6 +1,6 @@
 [project]
 name = "pinbench"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Detect when a coding-agent harness or model update makes it worse or pricier on your own tasks."
 readme = "README.md"
 license = "Apache-2.0"
@@ -24,6 +24,12 @@ dependencies = [
     "scipy==1.18.1",
     "typer==0.27.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/digitalinnovator/pinbench"
+Repository = "https://github.com/digitalinnovator/pinbench"
+Issues = "https://github.com/digitalinnovator/pinbench/issues"
+Changelog = "https://github.com/digitalinnovator/pinbench/blob/main/CHANGELOG.md"
 
 [project.scripts]
 pinbench = "pinbench.cli:app"

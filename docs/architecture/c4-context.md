@@ -25,8 +25,8 @@ C4Context
     Rel(harbor, sandbox, "Builds task images, runs trials")
     Rel(sandbox, harness, "Installs the pinned harness version")
     Rel(sandbox, models, "Harness calls model")
-    Rel(pinbench, harness, "Polls for new versions (planned)")
-    Rel(pinbench, alerts, "Posts regressions (planned)")
+    Rel(pinbench, harness, "Polls npm for new versions")
+    Rel(pinbench, alerts, "Posts regressions")
 
     UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
@@ -35,4 +35,4 @@ C4Context
 
 - **Secrets.** Model API keys pass from the operator's environment to Harbor to the sandbox. pinbench records their names, never their values (ADR-0004).
 - **Spend.** All token spend happens inside the sandbox, through the harness. pinbench controls spend by deciding whether to start another batch (ADR-0003), and by passing per-trial caps such as Claude Code's `max_budget_usd`.
-- **Network.** The sandbox needs egress to the npm registry or Anthropic's installer, and to the model API. pinbench itself needs no network in v0.1.
+- **Network.** The sandbox needs egress to the npm registry or Anthropic's installer, and to the model API. pinbench itself makes only small HTTPS requests: npm release checks and alerts.

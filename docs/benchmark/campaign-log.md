@@ -2,7 +2,7 @@
 
 > The project was renamed from "agent canary" to **pinbench** on 2026-10-21 ([ADR-0010](../adr/0010-name-pinbench.md)). This record keeps the names used at the time: `canary` is now `pinbench`, and `canary.toml` is `pinbench.toml`.
 
-Every paid step of the [plan](plan.md), in order, with what it cost and what it showed. Spend is the canary's ledger figure (`canary ledger status`); it is reconciled against the provider console after each step.
+Every paid step of the [plan](plan.md), in order, with what it cost and what it showed. Spend is the canary's ledger figure (`canary ledger status`); it was not reconciled against the provider consoles after the campaign.
 
 | Pool | Ledger limit |
 |---|---|
@@ -30,7 +30,7 @@ Gate checks (plan, after step 1):
 - **Caps record their cost.** The turn-capped and spend-capped trials are scored by the hidden tests (both failed, having done almost nothing) and keep their cost. The spend cap of $0.005 was overshot by one request, to $0.016: well inside the in-flight allowance the ledger reserves for Haiku ($0.045). Pass.
 - **Re-priced cost equals reported cost on all seven trials,** for Haiku 4.5 and Sonnet 5 as well as Opus 5 (spike 0001). The price table holds for the models the benchmark uses.
 - **Cost per trial:** Haiku at most $0.053 (gate $0.06), Sonnet at most $0.087 (gate $0.12). Pass.
-- **Ledger against console:** pending the owner's check.
+- **Ledger against console:** not reconciled; the provider consoles were not read again after the start.
 
 Observations:
 
@@ -67,7 +67,7 @@ One trial each of Claude Code builds published on the postmortem dates, on Haiku
 | 2.1.112 | 16 April (verbosity prompt) | pass | $0.043 | 6 | 2.1.112 |
 
 - **All three still install and run against today's API**, with today's model, and their cost (from each build's own bundled price table) matches the canary's re-pricing.
-- This answers the precondition the project brief set for the headline replay demo: the builds run. It does **not** show they reproduce the incident. That needs the incident's model (Opus 4.6), the subscription's effort defaults rather than an API key's, and a real budget; it stays out of v0.1.
+- This answers the precondition for the planned headline replay demo: the builds run. It does **not** show they reproduce the incident. That needs the incident's model (Opus 4.6), the subscription's effort defaults rather than an API key's, and a real budget; it stays out of v0.1.
 
 **Total after steps 1–3: $0.93** of the $22.50 ledger limit.
 
@@ -126,6 +126,8 @@ Codex CLI 0.163.0 on `gpt-6-luna`, the three demo tasks at reasoning effort high
 
 The plan's leftover rule (fixed before any spend): if the headline ends inconclusive at its batch cap with $15.00 or less spent, it gets one more batch. It ended at $14.55. `canary compare … --continue-from 20261020T174900Z-compare-98c8b5 --max-batches 1` continued the same e-process. **Spend: $2.18.**
 
+**A departure from the plan:** the plan ordered step 6 (the caching check) before this step, and the $15.00 rule was meant to be read after it. This batch ran first. In the planned order, the ledger would have shown $16.30 and this batch would not have run. The verdict is the same either way: not flagged at 5 batches or at 6.
+
 | Batch | Pairs | Discordant | Regressed / improved | E (threshold 20) |
 |---|---|---|---|---|
 | 5 | 60 | 21 | 16 / 5 | 11.31 |
@@ -156,7 +158,7 @@ The plan's leftover rule (fixed before any spend): if the headline ends inconclu
 - **Pass rate carried no information here, as expected for a cost regression:** Haiku 4.5 solved 0 of 6 and 1 of 6 of these tasks, which were tuned for Sonnet 5.
 - **Six tasks make the interval too narrow to trust** in its exact bounds (the report warns below 20 tasks); the direction and the size of the effect are not in doubt.
 
-**Total after step 6: Anthropic $18.48 of $22.50.** The Anthropic part of the plan is complete, within the owner's $20 target.
+**Total after step 6: Anthropic $18.48 of $22.50.** The Anthropic part of the plan is complete, within the campaign's $20 target.
 
 ## Step C1: Codex headroom check (OpenAI pool), 2026-10-21
 

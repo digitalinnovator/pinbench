@@ -1,12 +1,6 @@
 # Commit IDs in run records, and the commits they correspond to now
 
-On 2026-10-21, before the repository was first pushed in its current form, its history was edited:
-
-1. Commit messages lost an attribution trailer (15 of the 16 original commits had one).
-2. Every commit lost private material: a private project brief (one file), and the account-balance columns of two budget tables, in `docs/benchmark/plan.md` and `docs/benchmark/campaign-log.md`.
-3. Two sentences about how the work was done were reworded, in `examples/benchmark-suite/README.md` and `docs/benchmark/plan.md`.
-
-Nothing else changed. Each commit keeps its other files, its author, committer, dates and order, and its message apart from the trailer. Code, configs, tasks and benchmark evidence are byte-identical. Every commit ID changed, because an ID covers the message and the files.
+Before this repository was first published, its history was rewritten to remove private material. Every commit ID changed. Code, configs, tasks and benchmark evidence are byte-identical, and each commit keeps its author, dates and order.
 
 Run records cannot be edited (their checksums would break), so each run's `manifest.json` still names the commit it ran from by its **old** ID, in `suite_commit`. This table maps each old ID to the commit as it is now.
 
@@ -33,4 +27,4 @@ Run records cannot be edited (their checksums would break), so each run's `manif
 
 Runs marked "uncommitted changes" ran with edits not yet committed (`suite_dirty` in the manifest); for those the commit is the nearest committed state, not an exact one.
 
-The table lists the runs whose records are committed under `benchmarks/results/campaign-2026-10/`. The original history, which the old IDs belong to, is kept privately by the owner. Earlier versions of this file listed IDs from an intermediate state of the same day's cleanup; this table supersedes them.
+The table lists the runs whose records are committed under `benchmarks/results/campaign-2026-10/`. The original history, which the old IDs belong to, is kept privately by the maintainer. Earlier versions of this file listed IDs from an intermediate state of the same day's cleanup; this table supersedes them.

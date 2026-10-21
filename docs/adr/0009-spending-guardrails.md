@@ -6,7 +6,7 @@
 
 ## Context
 
-The brief requires "budget caps per pinbench run, so pinbench can't run up a bill". The first implementation had one rule: before each batch after the first, stop if spend plus the average batch cost would pass `[budget] max_usd`. An audit showed that this is not a bound:
+The v0.1 scope requires budget caps per run, so that pinbench cannot run up a bill. The first implementation had one rule: before each batch after the first, stop if spend plus the average batch cost would pass `[budget] max_usd`. An audit showed that this is not a bound:
 
 - The first batch ran before any check. With the demo config it could cost about $10 against a $5 `max_usd`.
 - One trial with no reported cost switched the check off for the rest of the run.
