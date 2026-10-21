@@ -11,14 +11,14 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from agent_canary import alerts
-from agent_canary.bundle import RunBundle
-from agent_canary.cli import app
-from agent_canary.config import AlertsConfig, load_config
-from agent_canary.http import HttpError, https_request
-from agent_canary.orchestrate import run_compare
-from agent_canary.runners.simulated import SimulatedRunner
-from agent_canary.suite import load_suite
+from pinbench import alerts
+from pinbench.bundle import RunBundle
+from pinbench.cli import app
+from pinbench.config import AlertsConfig, load_config
+from pinbench.http import HttpError, https_request
+from pinbench.orchestrate import run_compare
+from pinbench.runners.simulated import SimulatedRunner
+from pinbench.suite import load_suite
 
 cli = CliRunner()
 
@@ -63,13 +63,13 @@ def _alert(bundle: RunBundle, on: list[str] | None = None) -> alerts.Alert:
 def test_alert_content(regression: RunBundle) -> None:
     alert = _alert(regression, ["regression", "cost_increase", "false_success"])
     assert alert.reasons == ("regression", "cost_increase")
-    assert alert.title == "Agent canary: good -> bad on test-suite"
+    assert alert.title == "pinbench: good -> bad on test-suite"
     assert "claude-code@1.0.1" in alert.markdown
     assert "The pins differ in: version: '1.0.0' -> '1.0.1'" in alert.markdown
     assert "**regression**" in alert.markdown
     assert regression.run_id in alert.markdown
     assert "| cost_usd |" in alert.markdown
-    assert alert.slack_text.startswith("*Agent canary: good -> bad on test-suite*")
+    assert alert.slack_text.startswith("*pinbench: good -> bad on test-suite*")
 
 
 def test_no_reason_without_a_matching_condition(regression: RunBundle) -> None:
@@ -90,7 +90,7 @@ def test_slack_posts_text_and_reports_http_errors(regression: RunBundle) -> None
 
 def test_github_opens_an_issue_then_comments_on_it(regression: RunBundle) -> None:
     alert = _alert(regression)
-    send = {"repo": "acme/infra", "token": "t0ken", "labels": ["agent-canary"]}
+    send = {"repo": "acme/infra", "token": "t0ken", "labels": ["pinbench"]}
     http = FakeHttp(
         {("GET", "/repos/acme/infra/issues?"): (200, []), ("POST", "/issues"): (201, {"number": 7})}
     )
@@ -99,7 +99,7 @@ def test_github_opens_an_issue_then_comments_on_it(regression: RunBundle) -> Non
     assert (method, url) == ("POST", "https://api.github.com/repos/acme/infra/issues")
     assert headers["Authorization"] == "Bearer t0ken"
     assert body["title"] == alert.title
-    assert body["labels"] == ["agent-canary"]
+    assert body["labels"] == ["pinbench"]
 
     existing = [
         {"number": 3, "title": alert.title, "pull_request": {}},
@@ -116,9 +116,9 @@ def test_github_opens_an_issue_then_comments_on_it(regression: RunBundle) -> Non
 
 
 def test_dispatch_isolates_failures_and_missing_secrets(regression: RunBundle) -> None:
-    config = AlertsConfig(slack_webhook_env="CANARY_SLACK", github_repo="acme/infra")
+    config = AlertsConfig(slack_webhook_env="PINBENCH_SLACK", github_repo="acme/infra")
     http = FakeHttp({("POST", "hooks.slack.test"): (200, "ok")})
-    env = {"CANARY_SLACK": "https://hooks.slack.test/x"}
+    env = {"PINBENCH_SLACK": "https://hooks.slack.test/x"}
     slack, github = alerts.dispatch(config, _alert(regression), env, http=http)
     assert (slack.channel, slack.ok) == ("slack", True)
     assert (github.ok, github.detail) == (False, "environment variable GITHUB_TOKEN is not set")
@@ -158,15 +158,15 @@ def test_cli_dry_run_prints_and_sends_nothing(
     )
     assert result.exit_code == 0
     assert "channels: (none configured)" in result.output
-    assert "title: Agent canary: good -> bad on test-suite" in result.output
+    assert "title: pinbench: good -> bad on test-suite" in result.output
 
 
 def test_compare_alerts_when_configured_and_survives_failed_delivery(
     simulated_project: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    toml = simulated_project / "canary.toml"
-    toml.write_text(toml.read_text() + '\n[alerts]\nslack_webhook_env = "CANARY_SLACK"\n')
-    monkeypatch.delenv("CANARY_SLACK", raising=False)
+    toml = simulated_project / "pinbench.toml"
+    toml.write_text(toml.read_text() + '\n[alerts]\nslack_webhook_env = "PINBENCH_SLACK"\n')
+    monkeypatch.delenv("PINBENCH_SLACK", raising=False)
     try:
         result = cli.invoke(
             app,
@@ -179,4 +179,4 @@ def test_compare_alerts_when_configured_and_survives_failed_delivery(
             for f in files:
                 (Path(root) / f).chmod(0o644)
     assert result.exit_code == 1  # the regression, not the failed alert
-    assert "alert slack: environment variable CANARY_SLACK is not set" in result.output
+    assert "alert slack: environment variable PINBENCH_SLACK is not set" in result.output

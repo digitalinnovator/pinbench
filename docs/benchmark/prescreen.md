@@ -1,5 +1,7 @@
 # Free pre-screen of the benchmark tasks
 
+> The project was renamed from "agent canary" to **pinbench** on 2026-10-21 ([ADR-0010](../adr/0010-name-pinbench.md)). This record keeps the names used at the time: `canary` is now `pinbench`, and `canary.toml` is `pinbench.toml`.
+
 Before any API credit is spent, every candidate task is solved blind by Claude Sonnet 5 at two reasoning-effort settings, and the attempts are scored by the task's hidden tests. The pre-screen costs no API credit: the attempts run as Claude Code subagents on the owner's subscription.
 
 **What it is good for:** finding tasks with no headroom (every attempt passes, or none does) and the direction of the effort effect, before paying for calibration.

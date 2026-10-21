@@ -15,10 +15,10 @@ from typing import Any
 
 import pytest
 
-from agent_canary.config import load_config
-from agent_canary.orchestrate import run_compare
-from agent_canary.runners.harbor import HarborRunner
-from agent_canary.suite import load_suite
+from pinbench.config import load_config
+from pinbench.orchestrate import run_compare
+from pinbench.runners.harbor import HarborRunner
+from pinbench.suite import load_suite
 from tests.conftest import REPO_ROOT
 
 pytestmark = pytest.mark.docker
@@ -36,11 +36,11 @@ def demo_project(tmp_path: Path) -> Any:
         pytest.skip("docker is not available")
     project = tmp_path / "demo"
     shutil.copytree(
-        REPO_ROOT / "examples" / "demo-suite", project, ignore=shutil.ignore_patterns(".canary")
+        REPO_ROOT / "examples" / "demo-suite", project, ignore=shutil.ignore_patterns(".pinbench")
     )
-    config = (project / "canary.toml").read_text()
+    config = (project / "pinbench.toml").read_text()
     config = config.replace('"../../tools/harbor"', f'"{REPO_ROOT / "tools" / "harbor"}"')
-    (project / "canary.toml").write_text(config)
+    (project / "pinbench.toml").write_text(config)
     yield project
     for root, _dirs, files in os.walk(project):
         Path(root).chmod(0o755)

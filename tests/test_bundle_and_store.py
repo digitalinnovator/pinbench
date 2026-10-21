@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from agent_canary.bundle import BundleError, RunBundle, find_bundle, new_run_id
-from agent_canary.models import PinRecord, RunManifest, TaskRecord
-from agent_canary.store import RunIndex
+from pinbench.bundle import BundleError, RunBundle, find_bundle, new_run_id
+from pinbench.models import PinRecord, RunManifest, TaskRecord
+from pinbench.store import RunIndex
 from tests.conftest import record
 
 
@@ -19,7 +19,7 @@ def _manifest(run_id: str) -> RunManifest:
         run_id=run_id,
         kind="run",
         created_at=datetime(2026, 9, 27, tzinfo=UTC),
-        canary_version="test",
+        pinbench_version="test",
         runner={"kind": "simulated"},
         suite_name="s",
         suite_commit=None,

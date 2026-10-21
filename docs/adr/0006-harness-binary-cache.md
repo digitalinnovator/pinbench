@@ -12,8 +12,8 @@ Beyond speed, per-trial installs are a reproducibility and supply-chain concern.
 
 ## Decision
 
-- **Download once per version.** The canary downloads each pinned Claude Code binary once, into a host cache (`$XDG_CACHE_HOME/agent-canary/harness/claude-code/<version>/<platform>/claude`).
-- **Verify against the release manifest.** The download's SHA-256 must match `downloads.claude.ai/claude-code-releases/<version>/manifest.json`. On a mismatch the canary refuses to use the file.
+- **Download once per version.** pinbench downloads each pinned Claude Code binary once, into a host cache (`$XDG_CACHE_HOME/pinbench/harness/claude-code/<version>/<platform>/claude`).
+- **Verify against the release manifest.** The download's SHA-256 must match `downloads.claude.ai/claude-code-releases/<version>/manifest.json`. On a mismatch pinbench refuses to use the file.
 - **Mount read-only.** Each batch bind-mounts the binary read-only at `/usr/local/bin/claude`. Harbor's install check then sees `claude --version` equal to the pin and skips its own install.
 - **Record provenance.** Each batch writes `harbor-configs/batch-NNN.harness.json` (version, platform, SHA-256, source URL) into the run bundle. The sealed bundle therefore records exactly which harness bytes ran.
 - **Scope.** Claude Code only, on glibc Linux images (`[runner] harness_cache = true`, the default).

@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from agent_canary.verifier import (
+from pinbench.verifier import (
     check_trajectory,
     check_trial,
     classify_test_output,
@@ -263,7 +263,7 @@ def _exec(step_id: int, script: str, output: str = "") -> dict[str, Any]:
 
 
 def test_codex_code_mode_scripts_are_read() -> None:
-    from agent_canary.verifier import code_mode_actions
+    from pinbench.verifier import code_mode_actions
 
     script = (
         'const p = "*** Begin Patch\\n*** Update File: a.py\\n...";\n'
@@ -314,7 +314,7 @@ def test_codex_code_mode_output_is_decoded() -> None:
 
 
 def test_content_that_only_looks_like_a_list_is_read_as_text() -> None:
-    from agent_canary.verifier import _content_text
+    from pinbench.verifier import _content_text
 
     assert _content_text("[{not python}] 3 passed") == "[{not python}] 3 passed"
     assert _content_text("[{'a': __import__('os')}]") == "[{'a': __import__('os')}]"

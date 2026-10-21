@@ -10,17 +10,17 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from agent_canary.cli import app
-from agent_canary.config import load_config
-from agent_canary.models import TrialRecord
-from agent_canary.orchestrate import PinDriftError, run_compare
-from agent_canary.pricing import load_price_table
-from agent_canary.report import render_report
-from agent_canary.runners import BatchRequest
-from agent_canary.runners.simulated import SimulatedRunner
-from agent_canary.store import RunIndex
-from agent_canary.suite import load_suite
-from agent_canary.verifier import check_trial
+from pinbench.cli import app
+from pinbench.config import load_config
+from pinbench.models import TrialRecord
+from pinbench.orchestrate import PinDriftError, run_compare
+from pinbench.pricing import load_price_table
+from pinbench.report import render_report
+from pinbench.runners import BatchRequest
+from pinbench.runners.simulated import SimulatedRunner
+from pinbench.store import RunIndex
+from pinbench.suite import load_suite
+from pinbench.verifier import check_trial
 from tests.conftest import record
 
 cli = CliRunner()
@@ -52,7 +52,7 @@ def test_compare_detects_regression_and_writes_everything(simulated_project: Pat
     assert result.exit_code == 1, result.output
     assert "REGRESSION" in result.output
 
-    home = simulated_project / ".canary"
+    home = simulated_project / ".pinbench"
     (run_dir,) = (home / "runs").iterdir()
     verdict = json.loads((run_dir / "verdict.json").read_text())
     assert verdict["decision"] == "regression"
@@ -130,7 +130,7 @@ def test_pin_drift_aborts_and_still_seals_bundle(simulated_project: Path) -> Non
     loaded = load_config(simulated_project)
     with pytest.raises(PinDriftError, match=r"pinned 1\.0\.0, ran 9\.9\.9"):
         run_compare(loaded, load_suite(loaded), _DriftingRunner(), "good", "bad")
-    (run_dir,) = (simulated_project / ".canary" / "runs").iterdir()
+    (run_dir,) = (simulated_project / ".pinbench" / "runs").iterdir()
     assert (run_dir / "SHA256SUMS").exists()
     assert not (run_dir / "verdict.json").exists()
 
@@ -225,7 +225,7 @@ def test_false_success_reaches_verdict_report_index_and_cli(simulated_project: P
     assert "false success" in html
     assert "no test run after last edit" in html
 
-    index = RunIndex(simulated_project / ".canary" / "index.db")
+    index = RunIndex(simulated_project / ".pinbench" / "index.db")
     with index._connect() as db:
         rows = db.execute(
             "SELECT pin, claim_check, COUNT(*) FROM trials GROUP BY 1, 2 ORDER BY 1"
@@ -240,7 +240,7 @@ def test_false_success_reaches_verdict_report_index_and_cli(simulated_project: P
 
 
 def test_warmup_batches_are_left_out_of_cost_metrics_only(simulated_project: Path) -> None:
-    toml = simulated_project / "canary.toml"
+    toml = simulated_project / "pinbench.toml"
     toml.write_text(toml.read_text().replace("[stats]", "[stats]\nwarmup_batches = 1"))
     loaded = load_config(simulated_project)
     cfg = loaded.config
@@ -298,7 +298,7 @@ def test_a_run_can_only_continue_unchanged(simulated_project: Path) -> None:
     assert flagged.verdict.stop_reason == "significant"
     with pytest.raises(ValueError, match="stopped for 'significant', which is final"):
         run_compare(loaded, suite, runner, "good", "bad", continue_from=flagged.bundle)
-    toml = simulated_project / "canary.toml"
+    toml = simulated_project / "pinbench.toml"
     toml.write_text(toml.read_text().replace('version = "1.0.2"', 'version = "1.0.3"'))
     changed = load_config(simulated_project)
     with pytest.raises(ValueError, match="pin 'same' has changed since"):

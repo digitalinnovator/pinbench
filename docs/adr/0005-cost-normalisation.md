@@ -5,7 +5,7 @@
 
 ## Context
 
-The canary compares dollars per task across harness versions. None of the three harnesses report billed cost. They estimate it on the client:
+pinbench compares dollars per task across harness versions. None of the three harnesses report billed cost. They estimate it on the client:
 
 - Claude Code computes `total_cost_usd` from a price table **bundled into each build**.
 - Codex reports no cost in its JSON stream. Harbor estimates it with LiteLLM's price table.
@@ -21,10 +21,10 @@ Two findings from the real trials sharpen this:
 ## Decision
 
 1. **Record each harness's reported cost as `reported_cost_usd`.** It is kept, but it is not the comparison metric.
-2. **Compute `cost_usd` from token usage and a price table versioned in this repository** (`src/agent_canary/data/prices.toml`). The table is dated, names its source page, and is checked for internal consistency by a test. Every run bundle's manifest records the table's version and SHA-256.
+2. **Compute `cost_usd` from token usage and a price table versioned in this repository** (`src/pinbench/data/prices.toml`). The table is dated, names its source page, and is checked for internal consistency by a test. Every run bundle's manifest records the table's version and SHA-256.
 3. **Usage comes from the transcript, per request.** The ATIF trajectory gives, for each model request: prompt tokens, cache reads, cache writes split by 5-minute and 1-hour TTL, output tokens, the model, speed and inference geography. Each category is priced separately. Harbor's `result.json` totals cannot be used: they do not separate cache writes from uncached input.
 4. **Never part-price a trial.** An unknown model, fast mode or a transcript with no usage leaves the trial's `cost_usd` empty. If any scored trial in a comparison is un-priced, the cost metric falls back to `reported_cost_usd` for both arms and is labelled as such. Both arms are always priced the same way.
-5. **Budget enforcement uses the higher of the two estimates per trial**, so a stale table can never let the canary overspend.
+5. **Budget enforcement uses the higher of the two estimates per trial**, so a stale table can never let pinbench overspend.
 6. **Cache reads and writes are reported as their own metrics** (`cache_read_tokens`, `cache_write_tokens`), next to cost. A cost ratio should be read together with them.
 7. **`[stats] warmup_batches`** leaves the first N batches out of the cost, token and latency comparison. They still count for pass rate and for the budget, so nothing is wasted. The default is 0. Small suites should set 1.
 
@@ -43,5 +43,5 @@ Two findings from the real trials sharpen this:
 - **Trust harness-reported cost.** Simple, and wrong across versions.
 - **LiteLLM's price table.** It is in Harbor's environment, but it is a large dependency with its own update cadence, and it was the supply-chain incident vector in March 2026. A small table we own is auditable.
 - **Billing APIs (for example, Anthropic's Usage and Cost Admin API).** Billed truth, but it needs admin credentials and attributes cost per API key, not per trial. It is good for reconciliation, not per-trial attribution.
-- **A cache-neutral cost** (price every prompt token as if uncached, or as if cached). It removes warm-up noise, but it also hides the caching regressions the canary exists to catch.
+- **A cache-neutral cost** (price every prompt token as if uncached, or as if cached). It removes warm-up noise, but it also hides the caching regressions pinbench exists to catch.
 - **A discarded warm-up batch.** It pays for trials and throws them away. Keeping the batch for pass rate and dropping it only from cost metrics gets the same correction for free.

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_canary.models import TrialRecord, TrialStatus
+from pinbench.models import TrialRecord, TrialStatus
 
 FIXTURES = Path(__file__).parent / "fixtures"
 REPO_ROOT = Path(__file__).parent.parent
@@ -16,7 +16,7 @@ def _isolated_ledger(
     tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """No test may read or write the operator's real campaign ledger."""
-    monkeypatch.setenv("AGENT_CANARY_LEDGER_DIR", str(tmp_path_factory.mktemp("ledger")))
+    monkeypatch.setenv("PINBENCH_LEDGER_DIR", str(tmp_path_factory.mktemp("ledger")))
 
 
 def write_task(root: Path, name: str) -> Path:
@@ -32,10 +32,10 @@ def write_task(root: Path, name: str) -> Path:
 
 @pytest.fixture
 def simulated_project(tmp_path: Path) -> Path:
-    """A throwaway canary project with 6 stub tasks and a simulated runner."""
+    """A throwaway pinbench project with 6 stub tasks and a simulated runner."""
     for i in range(6):
         write_task(tmp_path / "tasks", f"task-{i}")
-    (tmp_path / "canary.toml").write_text(
+    (tmp_path / "pinbench.toml").write_text(
         textwrap.dedent(
             """
             [suite]

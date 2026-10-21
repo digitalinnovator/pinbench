@@ -1,0 +1,50 @@
+# Codex adapter spike (benchmark plan, OpenAI pool, step X1): does the pinbench run OpenAI's Codex
+# CLI through Harbor, prove its version, read its tokens and price them, and read its transcript?
+#
+# The three demo tasks, copied here because their image adds the Codex CLI at the pinned version.
+# Codex has no per-trial dollar cap, so each trial is bounded by an agent timeout, and the ledger
+# reserves `reserve_usd` per trial (a deliberately pessimistic guess until a trial is measured).
+#
+#   pinbench run codex-high -c examples/codex-spike --env-file .env --dry-run
+#   pinbench ledger limit openai 9.00        # once, before any paid run
+
+[suite]
+name = "codex-spike"
+tasks_dir = "tasks"
+
+[runner]
+kind = "harbor"
+harbor_command = ["uv", "run", "--project", "../../tools/harbor", "--frozen", "harbor"]
+environment = "docker"
+n_concurrent = 1
+agent_setup_timeout_multiplier = 2.0
+harness_cache = false
+
+[budget]
+max_usd = 1.00
+max_batches = 1
+attempts_per_batch = 1
+
+# gpt-6-luna is OpenAI's cheapest Codex-capable model ($0.10 / $0.50 per million tokens).
+# service_tier = "default" keeps requests off the priority tier, which costs twice as much.
+[pins.codex-high]
+harness = "codex"
+version = "0.163.0"
+model = "openai/gpt-6-luna"
+options = { reasoning_effort = "high", web_search = "disabled", config = { service_tier = "default" } }
+timeout_sec = 120
+reserve_usd = 0.30
+
+[pins.codex-low]
+harness = "codex"
+version = "0.163.0"
+model = "openai/gpt-6-luna"
+options = { reasoning_effort = "low", web_search = "disabled", config = { service_tier = "default" } }
+timeout_sec = 120
+reserve_usd = 0.30
+
+[pins.oracle]
+harness = "oracle"
+
+[pins.nop]
+harness = "nop"

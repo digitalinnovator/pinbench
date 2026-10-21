@@ -1,8 +1,8 @@
 # The replicated Codex benchmark (docs/benchmark/plan.md, "Codex replicated benchmark"), fixed
-# before its first run on 2026-10-21. Same 18 tasks, pins and image as canary.toml in this folder.
+# before its first run on 2026-10-21. Same 18 tasks, pins and image as pinbench.toml in this folder.
 #
-#   detection: canary compare codex-high codex-none -c examples/benchmark-suite-codex/replicate.toml   (5 runs)
-#   false alarms: canary compare codex-high codex-high-twin -c ...                                      (2 runs)
+#   detection: pinbench compare codex-high codex-none -c examples/benchmark-suite-codex/replicate.toml   (5 runs)
+#   false alarms: pinbench compare codex-high codex-high-twin -c ...                                      (2 runs)
 
 # Codex track of the benchmark (docs/benchmark/plan.md, OpenAI pool). The tasks are generated:
 #

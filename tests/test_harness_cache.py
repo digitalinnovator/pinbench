@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-from agent_canary import harness_cache
-from agent_canary.harness_cache import HarnessCacheError, ensure_claude_code
+from pinbench import harness_cache
+from pinbench.harness_cache import HarnessCacheError, ensure_claude_code
 
 PAYLOAD = b"#!/bin/sh\necho 2.1.283 (Claude Code)\n"
 

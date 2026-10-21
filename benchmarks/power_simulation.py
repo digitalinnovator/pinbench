@@ -3,7 +3,7 @@
 Costs nothing: outcomes are simulated, not run. It sizes the regression-injection benchmark
 before we spend on it, and checks ADR-0003's claims against two alternatives:
 
-- e-process(q)  the canary's paired mixture e-process with mixture bound q_max, checked after
+- e-process(q)  pinbench's paired mixture e-process with mixture bound q_max, checked after
                 every batch (ADR-0003)
 - fixed-N       an exact one-sided McNemar test, run once at the full budget
 - peeking       the same McNemar test re-checked after every batch, stopping at p < alpha. This is
@@ -12,7 +12,7 @@ before we spend on it, and checks ADR-0003's claims against two alternatives:
 Model: each task has a latent difficulty d ~ N(0, spread) on the logit scale, shared by both
 arms. Baseline pass probability is sigmoid(logit(p0) + d). The candidate is shifted on the logit
 scale by the amount that lowers the suite-average pass rate by `drop` points. Every batch runs each
-task once per arm (a full sweep), exactly like `canary compare` with attempts_per_batch = 1. A
+task once per arm (a full sweep), exactly like `pinbench compare` with attempts_per_batch = 1. A
 fresh suite is drawn for every simulated run, so results average over suites.
 
     uv run python benchmarks/power_simulation.py            # writes benchmarks/results/
@@ -31,7 +31,7 @@ from scipy.optimize import brentq
 from scipy.special import expit, logit
 from scipy.stats import binom
 
-from agent_canary.stats import log_e_one_sided
+from pinbench.stats import log_e_one_sided
 
 RESULTS = Path(__file__).parent / "results"
 

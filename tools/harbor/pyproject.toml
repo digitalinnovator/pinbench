@@ -1,14 +1,14 @@
 # Isolated, hash-locked environment for the Harbor CLI.
 #
-# The canary talks to Harbor only through its CLI and on-disk job format
+# pinbench talks to Harbor only through its CLI and on-disk job format
 # (docs/adr/0002-execution-via-harbor.md). Keeping Harbor in its own lockfile
-# keeps its large dependency tree, including LiteLLM, out of the canary's own
-# environment, and lets the Harbor version move independently of the canary.
+# keeps its large dependency tree, including LiteLLM, out of pinbench's own
+# environment, and lets the Harbor version move independently of pinbench.
 #
 #   uv sync --project tools/harbor --frozen
 #   uv run --project tools/harbor --frozen harbor --version
 [project]
-name = "agent-canary-harbor-tool"
+name = "pinbench-harbor-tool"
 version = "0"
 requires-python = ">=3.12"
 dependencies = [

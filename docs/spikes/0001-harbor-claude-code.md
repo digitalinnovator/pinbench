@@ -1,5 +1,7 @@
 # Spike 0001: Harbor as the execution layer, and Claude Code at a pinned version
 
+> The project was renamed from "agent canary" to **pinbench** on 2026-10-21 ([ADR-0010](../adr/0010-name-pinbench.md)). This record keeps the names used at the time: `canary` is now `pinbench`, and `canary.toml` is `pinbench.toml`.
+
 - Date: 2026-09-27
 - Goal (brief, step 3): run one task through Harbor with Claude Code at a pinned version, and capture tokens, cost and transcript.
 - Outcome: **done.** Claude Code 2.1.283 on `claude-opus-5` ran through Harbor and the canary, with tokens, cost and transcript captured (section 3). It took three failed attempts first; each one found a real problem (section 3a). Total API spend: $1.30.

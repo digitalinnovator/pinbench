@@ -9,16 +9,16 @@ A canary verdict such as "Claude Code 2.1.284 regressed pass rate, p ≤ 0.02" m
 
 ## Decision
 
-1. **Each canary invocation writes one run bundle**, a directory under `.canary/runs/<run_id>/`:
-   - `manifest.json`: canary version, Harbor version, suite name, git commit and dirty flag, a SHA-256 digest of every task directory, the full pin specs with their fingerprints, the statistics settings, budget and bootstrap seed.
+1. **Each pinbench invocation writes one run bundle**, a directory under `.pinbench/runs/<run_id>/`:
+   - `manifest.json`: pinbench version, Harbor version, suite name, git commit and dirty flag, a SHA-256 digest of every task directory, the full pin specs with their fingerprints, the statistics settings, budget and bootstrap seed.
    - `harbor/`: the raw Harbor job directories, untouched. These hold each trial's `result.json`, `lock.json`, agent logs, ATIF trajectory and verifier output.
    - `trials.jsonl`: one normalised `TrialRecord` per trial.
    - `verdict.json`: the statistical outcome and the reason for stopping (compare runs only).
    - `SHA256SUMS`: a checksum for every file above, written last.
-2. **Sealing.** After `SHA256SUMS` is written, every file becomes read-only (`0444`) and every directory `0555`. `canary verify <run_id>` recomputes the checksums. Local files cannot be made truly immutable, so the guarantee is that tampering is evident, not prevented.
+2. **Sealing.** After `SHA256SUMS` is written, every file becomes read-only (`0444`) and every directory `0555`. `pinbench verify <run_id>` recomputes the checksums. Local files cannot be made truly immutable, so the guarantee is that tampering is evident, not prevented.
 3. **Pin fingerprint.** A pin's fingerprint is a SHA-256 over its canonical JSON: harness, version, model, options, environment variable *names*, and the content hashes of any referenced config files. Values of secret-bearing variables are never recorded. The same fingerprint means the same configuration.
-4. **SQLite (`.canary/index.db`) is a derived index**, rebuilt from bundles by `canary index rebuild`. The bundles are authoritative. The index can be deleted at any time.
-5. **Reports are derived artefacts outside the bundle** (`.canary/reports/<run_id>.html`). They link into the bundle for trace drill-down, so a template change never alters a sealed bundle.
+4. **SQLite (`.pinbench/index.db`) is a derived index**, rebuilt from bundles by `pinbench index rebuild`. The bundles are authoritative. The index can be deleted at any time.
+5. **Reports are derived artefacts outside the bundle** (`.pinbench/reports/<run_id>.html`). They link into the bundle for trace drill-down, so a template change never alters a sealed bundle.
 
 ## Consequences
 

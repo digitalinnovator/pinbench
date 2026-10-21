@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check a benchmark task offline: no Docker, no harness, no API calls.
 
-A task in Harbor's format is only useful to the canary if its hidden tests fail on the starting
+A task in Harbor's format is only useful to pinbench if its hidden tests fail on the starting
 code, pass on the reference solution, and (for tasks with a documented trap) fail on a plausible
 careless solution that still passes the visible test. This script checks exactly that by running
 the task's own files in a temporary copy of `environment/app`.
@@ -88,7 +88,7 @@ def check_task(task: Path, naive: Path | None) -> dict[str, object]:
 
     config = tomllib.loads((task / "task.toml").read_text())
     name = config.get("task", {}).get("name")
-    record("task name", name == f"agent-canary/{task.name}", f"found {name!r}")
+    record("task name", name == f"pinbench/{task.name}", f"found {name!r}")
 
     for rel in ("environment/Dockerfile", "tests/test.sh"):
         same = (task / rel).read_bytes() == (REFERENCE_TASK / rel).read_bytes()
@@ -114,7 +114,7 @@ def check_task(task: Path, naive: Path | None) -> dict[str, object]:
     record("has a visible test", bool(visible))
 
     hidden = task / "tests" / "test_solution.py"
-    with tempfile.TemporaryDirectory(prefix="canary-task-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="pinbench-task-") as tmp:
         root = Path(tmp)
 
         start = _fresh_app(task, root, "start")

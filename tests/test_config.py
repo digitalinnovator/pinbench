@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from agent_canary.config import PinSpec, load_config
-from agent_canary.suite import SuiteError, load_suite
+from pinbench.config import PinSpec, load_config
+from pinbench.suite import SuiteError, load_suite
 from tests.conftest import REPO_ROOT, write_task
 
 
@@ -52,7 +52,7 @@ def test_fingerprint_hashes_config_file_content(tmp_path: Path) -> None:
 
 
 def test_invalid_pin_name(tmp_path: Path) -> None:
-    (tmp_path / "canary.toml").write_text(
+    (tmp_path / "pinbench.toml").write_text(
         '[suite]\nname = "s"\n[pins."bad name"]\nharness = "nop"\n'
     )
     with pytest.raises(ValidationError, match="invalid pin names"):
@@ -60,7 +60,7 @@ def test_invalid_pin_name(tmp_path: Path) -> None:
 
 
 def test_unknown_keys_are_errors(tmp_path: Path) -> None:
-    (tmp_path / "canary.toml").write_text(
+    (tmp_path / "pinbench.toml").write_text(
         '[suite]\nname = "s"\n[pins.a]\nharness = "nop"\nversoin = "1"\n'
     )
     with pytest.raises(ValidationError, match="versoin"):
@@ -77,7 +77,7 @@ def test_shipped_examples_validate(example: str) -> None:
 def test_suite_include_and_digest(tmp_path: Path) -> None:
     for name in ["a", "b"]:
         write_task(tmp_path / "tasks", name)
-    (tmp_path / "canary.toml").write_text(
+    (tmp_path / "pinbench.toml").write_text(
         '[suite]\nname = "s"\ninclude = ["b"]\n[pins.x]\nharness = "nop"\n'
     )
     suite = load_suite(load_config(tmp_path))
@@ -89,7 +89,7 @@ def test_suite_include_and_digest(tmp_path: Path) -> None:
 
 def test_suite_missing_include(tmp_path: Path) -> None:
     write_task(tmp_path / "tasks", "a")
-    (tmp_path / "canary.toml").write_text(
+    (tmp_path / "pinbench.toml").write_text(
         '[suite]\nname = "s"\ninclude = ["zzz"]\n[pins.x]\nharness = "nop"\n'
     )
     with pytest.raises(SuiteError, match="zzz"):

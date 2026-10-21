@@ -1,5 +1,7 @@
 # Benchmark plan: regression-injection detection on a fixed small budget
 
+> The project was renamed from "agent canary" to **pinbench** on 2026-10-21 ([ADR-0010](../adr/0010-name-pinbench.md)). This record keeps the names used at the time: `canary` is now `pinbench`, and `canary.toml` is `pinbench.toml`.
+
 The benchmark is the launch (see the portfolio principles). This plan fixes the protocol before any money is spent, so the published numbers cannot be tuned after the fact.
 
 - Status: **draft, not yet approved by the owner.** Nothing in it has been spent.

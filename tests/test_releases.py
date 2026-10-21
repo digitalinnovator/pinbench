@@ -11,9 +11,9 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from agent_canary import releases
-from agent_canary.cli import app
-from agent_canary.config import load_config
+from pinbench import releases
+from pinbench.cli import app
+from pinbench.config import load_config
 
 cli = CliRunner()
 
@@ -62,7 +62,7 @@ def test_versions_compare_numerically() -> None:
 @pytest.fixture
 def watched(simulated_project: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
     """The simulated project watching Claude Code, with the registry faked at 1.0.5."""
-    toml = simulated_project / "canary.toml"
+    toml = simulated_project / "pinbench.toml"
     toml.write_text(
         toml.read_text()
         + '\n[watch.cc]\nbaseline = "good"\n\n'
@@ -95,7 +95,7 @@ def test_watch_without_run_spends_nothing(watched: Any) -> None:
     result = cli.invoke(app, ["watch", "-c", str(project)], catch_exceptions=False)
     assert result.exit_code == 0
     assert "latest is 1.0.5, baseline good is 1.0.0: NEW RELEASE, not tested" in result.output
-    assert not (project / ".canary" / "runs").exists()
+    assert not (project / ".pinbench" / "runs").exists()
 
 
 def test_watch_run_tests_a_release_once(watched: Any) -> None:
@@ -103,9 +103,9 @@ def test_watch_run_tests_a_release_once(watched: Any) -> None:
     result = cli.invoke(app, ["watch", "--run", "-c", str(project)], catch_exceptions=False)
     assert result.exit_code == 1, result.output
     assert "REGRESSION" in result.output
-    state = json.loads((project / ".canary" / "watch.json").read_text())["cc"]
+    state = json.loads((project / ".pinbench" / "watch.json").read_text())["cc"]
     assert (state["last_tested"], state["decision"]) == ("1.0.5", "regression")
-    (run_dir,) = (project / ".canary" / "runs").iterdir()
+    (run_dir,) = (project / ".pinbench" / "runs").iterdir()
     manifest = json.loads((run_dir / "manifest.json").read_text())
     assert (manifest["baseline"], manifest["candidate"]) == ("good", "good-1.0.5")
     assert state["run_id"] == run_dir.name
@@ -120,7 +120,7 @@ def test_watch_run_tests_a_release_once(watched: Any) -> None:
 
 
 def test_watch_config_must_name_a_pin(simulated_project: Path) -> None:
-    toml = simulated_project / "canary.toml"
+    toml = simulated_project / "pinbench.toml"
     toml.write_text(toml.read_text() + '\n[watch.cc]\nbaseline = "nope"\n')
     result = cli.invoke(app, ["watch", "-c", str(simulated_project)])
     assert result.exit_code == 2
@@ -129,16 +129,16 @@ def test_watch_config_must_name_a_pin(simulated_project: Path) -> None:
 
 def test_a_release_whose_test_failed_is_not_retried_on_every_tick(watched: Any) -> None:
     project, _ = watched
-    toml = project / "canary.toml"
+    toml = project / "pinbench.toml"
     # Break the run: the derived pin has no simulated arm, so the compare errors out.
     toml.write_text(
         toml.read_text().replace('[runner.simulated."good-1.0.5"]', "[runner.simulated.x]")
     )
     first = cli.invoke(app, ["watch", "--run", "-c", str(project)])
     assert first.exit_code == 2
-    state = json.loads((project / ".canary" / "watch.json").read_text())["cc"]
+    state = json.loads((project / ".pinbench" / "watch.json").read_text())["cc"]
     assert state["last_failed"] == "1.0.5"
     second = cli.invoke(app, ["watch", "--run", "-c", str(project)])
     assert second.exit_code == 2
     assert "an earlier attempt to test this release failed; pass --retest" in second.output
-    assert len(list((project / ".canary" / "runs").iterdir())) == 1  # no second attempt
+    assert len(list((project / ".pinbench" / "runs").iterdir())) == 1  # no second attempt

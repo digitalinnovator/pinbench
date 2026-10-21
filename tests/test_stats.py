@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 from scipy.integrate import quad
 
-from agent_canary.models import TrialStatus
-from agent_canary.stats import (
+from pinbench.models import TrialStatus
+from pinbench.stats import (
     SequentialState,
     build_pairs,
     cluster_bootstrap_ratio,
@@ -129,7 +129,7 @@ def test_detects_a_real_regression() -> None:
 
 
 def test_state_tracks_running_max_for_anytime_p() -> None:
-    from agent_canary.stats import Pair
+    from pinbench.stats import Pair
 
     regress_pairs = [Pair(0, f"t{i}", True, False) for i in range(5)]
     improve_pairs = [Pair(1, f"t{i}", False, True) for i in range(5)]
@@ -141,7 +141,7 @@ def test_state_tracks_running_max_for_anytime_p() -> None:
 
 
 def test_two_sided_decision_picks_direction() -> None:
-    from agent_canary.stats import Pair
+    from pinbench.stats import Pair
 
     pairs = [Pair(0, f"t{i}", False, True) for i in range(12)]
     state = SequentialState().update(pairs, "two-sided")

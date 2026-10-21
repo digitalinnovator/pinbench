@@ -1,6 +1,6 @@
 # Benchmark suite: candidate tasks
 
-Thirty-two small Python tasks in Harbor's task format, written for the regression-injection benchmark ([plan](../../docs/benchmark/plan.md)). They are **candidates**: calibration decides which ones the benchmark uses, and `canary.toml`'s `[suite] include` list records that choice.
+Thirty-two small Python tasks in Harbor's task format, written for the regression-injection benchmark ([plan](../../docs/benchmark/plan.md)). They are **candidates**: calibration decides which ones the benchmark uses, and `pinbench.toml`'s `[suite] include` list records that choice.
 
 ## What a task is for
 

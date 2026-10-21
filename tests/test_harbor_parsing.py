@@ -2,7 +2,7 @@
 
 `fixtures/harbor/oracle-job` is the oracle agent on Harbor's hello-world task, captured on
 2026-09-27 with absolute paths replaced. If Harbor changes its result schema, these tests fail
-before a canary run silently misreads trials.
+before a pinbench run silently misreads trials.
 """
 
 from __future__ import annotations
@@ -13,17 +13,17 @@ from pathlib import Path
 
 import pytest
 
-from agent_canary.config import PinSpec, RunnerConfig
-from agent_canary.models import TrialStatus
-from agent_canary.runners import BatchRequest, RunnerError
-from agent_canary.runners.harbor import (
+from pinbench.config import PinSpec, RunnerConfig
+from pinbench.models import TrialStatus
+from pinbench.runners import BatchRequest, RunnerError
+from pinbench.runners.harbor import (
     HarborTrialResult,
     collect_trials,
     job_config,
     parse_trial,
     pin_identities,
 )
-from agent_canary.suite import TaskRef
+from pinbench.suite import TaskRef
 from tests.conftest import FIXTURES
 
 ORACLE_JOB = FIXTURES / "harbor" / "oracle-job"
@@ -218,8 +218,8 @@ def test_setup_timeout_multiplier_reaches_the_job(tmp_path: Path) -> None:
 
 
 def test_cached_harness_is_mounted_read_only(tmp_path: Path) -> None:
-    from agent_canary.harness_cache import CachedBinary
-    from agent_canary.runners.harbor import harness_mounts
+    from pinbench.harness_cache import CachedBinary
+    from pinbench.runners.harbor import harness_mounts
 
     binary = CachedBinary("claude-code", "2.1.283", "linux-x64", "ab" * 32, "https://x", tmp_path)
     pins = {"o": PinSpec(harness="oracle")}
@@ -292,7 +292,7 @@ def test_real_claude_code_trial(tmp_path: Path) -> None:
         709,
     )
     assert record.reported_cost_usd == pytest.approx(0.08882375)
-    # Re-priced from the transcript's token usage with the canary's own table (ADR-0005).
+    # Re-priced from the transcript's token usage with pinbench's own table (ADR-0005).
     assert record.cost_usd == pytest.approx(0.08882375)
     assert record.n_cache_write_tokens == 6681
     assert record.agent_seconds == pytest.approx(20.53, abs=0.01)
@@ -385,7 +385,7 @@ def test_job_config_pins_retries_off_and_passes_the_agent_timeout(tmp_path: Path
 
 
 def test_a_job_that_allowed_retries_is_rejected(tmp_path: Path) -> None:
-    from agent_canary.runners.harbor import HarborRunner
+    from pinbench.runners.harbor import HarborRunner
 
     runner = HarborRunner(RunnerConfig(), cwd=tmp_path, pass_threshold=1.0)
     runner._version = "0.23.0"

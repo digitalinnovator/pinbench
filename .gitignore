@@ -12,8 +12,8 @@ build/
 .coverage
 htmlcov/
 
-# Canary state: run bundles, index and reports stay local
-.canary/
+# pinbench state: run bundles, index and reports stay local
+.pinbench/
 jobs/
 
 # Secrets

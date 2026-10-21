@@ -8,12 +8,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from agent_canary.config import PinSpec, RunnerConfig
-from agent_canary.harness_cache import CachedBinary
-from agent_canary.runners import BatchRequest
-from agent_canary.runners import harbor as harbor_module
-from agent_canary.runners.harbor import HarborRunner
-from agent_canary.suite import TaskRef
+from pinbench.config import PinSpec, RunnerConfig
+from pinbench.harness_cache import CachedBinary
+from pinbench.runners import BatchRequest
+from pinbench.runners import harbor as harbor_module
+from pinbench.runners.harbor import HarborRunner
+from pinbench.suite import TaskRef
 from tests.conftest import write_task
 
 FAKE_HARBOR = [sys.executable, str(Path(__file__).parent / "fake_harbor.py")]

@@ -1,6 +1,6 @@
 .PHONY: dev check test docker-test check-suite demo power clean
 
-# One-command setup: the canary's env plus the isolated, hash-locked Harbor env (ADR-0002).
+# One-command setup: pinbench's env plus the isolated, hash-locked Harbor env (ADR-0002).
 dev:
 	uv sync --frozen
 	uv sync --frozen --project tools/harbor
@@ -25,7 +25,7 @@ check-suite:
 
 # Simulated compare: no Docker, no API keys, no spend.
 demo:
-	uv run canary compare stable regressed -c examples/simulated
+	uv run pinbench compare stable regressed -c examples/simulated
 
 # Simulated power analysis for the pass-rate test (no spend). Writes benchmarks/results/.
 power:
@@ -33,5 +33,5 @@ power:
 
 # Sealed bundles are read-only; restore write permission before deleting local state.
 clean:
-	find . -path ./tools/harbor/.venv -prune -o -type d -name .canary -print0 \
+	find . -path ./tools/harbor/.venv -prune -o -type d -name .pinbench -print0 \
 		| xargs -0 -I{} sh -c 'chmod -R u+w "{}" && rm -rf "{}"'

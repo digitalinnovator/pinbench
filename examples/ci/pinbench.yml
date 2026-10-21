@@ -1,0 +1,94 @@
+# Scheduled "pinbench in CI" example. Copy to .github/workflows/ in the repository that holds your
+# task suite and adjust the paths. It is kept outside .github/ here so it does not run in this repo.
+#
+# Every day it asks npm whether the watched harness has a newer release than your baseline pin.
+# If so, it compares the two on your suite, within the budget in pinbench.toml, and alerts.
+# A release is tested once: .pinbench/watch.json remembers it (restored from the cache below).
+# Spending is bounded twice: [budget] in pinbench.toml per run, and a lifetime ledger limit.
+#
+# Secrets to set in the repository:
+#   ANTHROPIC_API_KEY      the harness under test
+#   PINBENCH_SLACK_WEBHOOK   optional, if [alerts] slack_webhook_env names it
+# The job's GITHUB_TOKEN opens the issue when [alerts] github_repo is this repository.
+
+name: pinbench
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily, off the hour to avoid the scheduler's busiest minute
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # only needed for [alerts] github_repo
+
+concurrency:
+  group: pinbench
+  cancel-in-progress: false # never cancel a run that is already spending
+
+jobs:
+  watch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      SUITE: examples/demo-suite
+      PINBENCH_LEDGER_DIR: ${{ github.workspace }}/.pinbench-ledger
+      PINBENCH_LIFETIME_USD: "20" # total this job may ever spend on the anthropic pool
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+      - run: make dev
+
+      # State that must survive between runs: the watcher's memory of tested releases, the
+      # campaign ledger (ADR-0009) and the pinned harness binaries (ADR-0006).
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ env.SUITE }}/.pinbench/watch.json
+            ${{ env.PINBENCH_LEDGER_DIR }}
+            ~/.cache/pinbench
+          key: pinbench-${{ github.run_id }}
+          restore-keys: pinbench-
+
+      # The ledger limit is a LIFETIME limit for this pool, across every scheduled run. It is set
+      # only if the restored ledger has none, so it is never reset while the cache survives.
+      # If the cache is evicted (GitHub drops caches unused for 7 days), the ledger starts again
+      # from zero: keep a spend limit on the API key's workspace as the real backstop.
+      - name: Set the lifetime spending limit once
+        run: uv run pinbench ledger limit anthropic "$PINBENCH_LIFETIME_USD" --if-unset
+
+      - name: Test new harness releases
+        id: pinbench
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PINBENCH_SLACK_WEBHOOK: ${{ secrets.PINBENCH_SLACK_WEBHOOK }}
+          GITHUB_TOKEN: ${{ github.token }}
+        # Exit code 1 means a tested release regressed, which fails the job on purpose.
+        # Exit code 2 means nothing could be tested (refused by the ledger, or a dead batch).
+        run: uv run pinbench --log-format json watch --run -c "$SUITE"
+
+      # Save the ledger and the watcher state even when the job fails on a regression.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: always()
+        with:
+          path: |
+            ${{ env.SUITE }}/.pinbench/watch.json
+            ${{ env.PINBENCH_LEDGER_DIR }}
+            ~/.cache/pinbench
+          key: pinbench-${{ github.run_id }}
+
+      # Bundles are the evidence (ADR-0004): keep them even when the job fails on a regression.
+      - name: Pack run bundles and reports
+        if: always()
+        run: |
+          if [ -d "$SUITE/.pinbench/runs" ]; then
+            tar -czf pinbench-evidence.tgz -C "$SUITE/.pinbench" runs reports
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && hashFiles('pinbench-evidence.tgz') != ''
+        with:
+          name: pinbench-evidence-${{ github.run_id }}
+          path: pinbench-evidence.tgz
+          retention-days: 90

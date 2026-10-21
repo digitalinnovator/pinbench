@@ -1,0 +1,89 @@
+# Demo suite: three small Python tasks in Harbor's task format (tasks/<name>/task.toml).
+#
+#   pinbench validate -c examples/demo-suite
+#   pinbench compare oracle nop -c examples/demo-suite          # zero-cost plumbing check
+#   pinbench compare cc-baseline cc-low-effort -c examples/demo-suite   # spends API credit
+
+[suite]
+name = "demo"
+tasks_dir = "tasks"
+
+[runner]
+kind = "harbor"
+# The isolated, hash-locked Harbor environment (ADR-0002). Relative paths resolve from this file.
+harbor_command = ["uv", "run", "--project", "../../tools/harbor", "--frozen", "harbor"]
+environment = "docker"
+n_concurrent = 4
+# Harness install inside each sandbox (download + first launch) can exceed Harbor's 360 s default.
+agent_setup_timeout_multiplier = 2.0
+
+[stats]
+alpha = 0.05
+alternative = "less"
+# With 3 tasks, the first batch's prompt-cache writes dominate cost (spike 0001, section 4).
+warmup_batches = 1
+
+[budget]
+max_usd = 5.0
+max_batches = 8
+attempts_per_batch = 1
+
+# --- Zero-cost pins: Harbor's oracle applies each task's reference solution; nop does nothing.
+[pins.oracle]
+harness = "oracle"
+
+[pins.nop]
+harness = "nop"
+
+# --- Claude Code, pinned exactly. max_budget_usd caps each trial inside the harness. The campaign
+# ledger reserves that cap plus one in-flight request per trial (ADR-0009). Measured trials on
+# these tasks cost $0.03-0.14 (spike 0001), so $0.30 leaves room without reserving dollars.
+[pins.cc-baseline]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "high", max_budget_usd = "0.30" }
+
+# The next three pins inject the harness-layer regressions from Anthropic's 2026-04-23 postmortem.
+# Lower reasoning effort (postmortem: default effort lowered, Mar 4).
+[pins.cc-low-effort]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "low", max_budget_usd = "0.30" }
+
+# Verbosity instruction (postmortem: verbosity system-prompt change, Apr 16).
+[pins.cc-verbose]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "high", max_budget_usd = "0.30", append_system_prompt = "Keep every response under 25 words. Do not explain your reasoning, restate the task or summarise your changes." }
+
+# Prompt caching disabled (postmortem: thinking-block caching bug, Mar 26; an approximation).
+[pins.cc-no-cache]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-opus-5"
+options = { reasoning_effort = "high", max_budget_usd = "0.30" }
+env = { DISABLE_PROMPT_CACHING = "1" }
+
+# --- A cheap Claude Code pin for checks that do not need a frontier model (the release watcher).
+# Claude Code ignores reasoning_effort on Haiku 4.5, so this pin does not set it.
+[pins.h45]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.08", max_turns = 20 }
+
+# --- Release watcher: `pinbench watch` checks npm for a newer Claude Code than the baseline pin.
+# `pinbench watch --run` then compares the baseline with the same pin at the new version.
+[watch.claude-code]
+baseline = "h45"
+channel = "latest"             # or "stable"
+
+# --- Alerts (off until a channel is set). Secrets are read from the named environment variables.
+# [alerts]
+# on = ["regression", "cost_increase"]
+# slack_webhook_env = "PINBENCH_SLACK_WEBHOOK"
+# github_repo = "your-org/your-repo"
+# github_token_env = "GITHUB_TOKEN"

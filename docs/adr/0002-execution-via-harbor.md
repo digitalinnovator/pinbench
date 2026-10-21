@@ -30,11 +30,11 @@ The v0.1 brief rules out a new task runner. Harbor ([harbor-framework/harbor](ht
 
 ## Decision
 
-1. **Harbor is the execution layer, reached through its CLI and on-disk job format, never its Python API.** For each batch the canary writes a Harbor `JobConfig` YAML, runs `harbor run -c <file> -y -q` and parses the trial directories it produces. The process boundary is the contract.
+1. **Harbor is the execution layer, reached through its CLI and on-disk job format, never its Python API.** For each batch pinbench writes a Harbor `JobConfig` YAML, runs `harbor run -c <file> -y -q` and parses the trial directories it produces. The process boundary is the contract.
 2. **Harbor lives in its own hash-locked tool environment** (`tools/harbor/`, pinning `harbor==0.23.0` and `litellm==1.93.2`, wheels only) and is invoked as `uv run --project tools/harbor --frozen harbor`. LiteLLM 1.93.2 rather than the 1.93.0 in Harbor's lock, because 1.93.0 ships no macOS wheels and would compile a Rust extension from source. The command is configurable (`[runner] harbor_command`).
-3. **The suite format is Harbor's task format.** `canary.toml` adds only suite metadata, pins and budgets. There is no second task format to learn or convert.
-4. **We parse Harbor's JSON with our own tolerant models** (Pydantic, `extra="ignore"`, only the fields we use). Contract tests run them against fixtures captured from a real Harbor run. After every trial the canary checks that the harness version that actually ran equals the pinned version. A mismatch is recorded as pin drift and fails the run rather than being silently compared. The running version is read from the harness's ATIF transcript, because Harbor's `agent_info.version` only echoes the requested version when one is pinned (spike 0001, section 3a).
-5. **One Harbor job per batch holds every arm.** Both arms then run in the same time window, which controls for API-side drift during the day, and each task image is built once. Trials map back to pins by agent name, model and options. The canary refuses to run pins it cannot tell apart. Exception: pins on different Claude Code versions run as one concurrent job per version, so each can mount its own cached binary (ADR-0006).
+3. **The suite format is Harbor's task format.** `pinbench.toml` adds only suite metadata, pins and budgets. There is no second task format to learn or convert.
+4. **We parse Harbor's JSON with our own tolerant models** (Pydantic, `extra="ignore"`, only the fields we use). Contract tests run them against fixtures captured from a real Harbor run. After every trial pinbench checks that the harness version that actually ran equals the pinned version. A mismatch is recorded as pin drift and fails the run rather than being silently compared. The running version is read from the harness's ATIF transcript, because Harbor's `agent_info.version` only echoes the requested version when one is pinned (spike 0001, section 3a).
+5. **One Harbor job per batch holds every arm.** Both arms then run in the same time window, which controls for API-side drift during the day, and each task image is built once. Trials map back to pins by agent name, model and options. pinbench refuses to run pins it cannot tell apart. Exception: pins on different Claude Code versions run as one concurrent job per version, so each can mount its own cached binary (ADR-0006).
 6. **The Harbor version is part of what a run records.** It is written into every run bundle. Harbor upgrades go through a canary comparison, because they can change how a harness is launched.
 7. **Execution sits behind a `Runner` protocol.** A `SimulatedRunner` implements it for tests and power analysis. Other back-ends (Margin Eval, Inspect) can be added without touching statistics or storage.
 
@@ -42,7 +42,7 @@ The v0.1 brief rules out a new task runner. Harbor ([harbor-framework/harbor](ht
 
 - No runner code to own. Sandbox providers (Docker, Daytona, Modal, E2B and more) come with Harbor.
 - A Harbor upgrade is an explicit change to `tools/harbor/uv.lock` plus a fixture refresh. If contract tests fail, the schema moved.
-- LiteLLM and the rest of Harbor's tree never enter the canary's own environment or lockfile.
+- LiteLLM and the rest of Harbor's tree never enter pinbench's own environment or lockfile.
 - Spawning one process per batch costs seconds. That is negligible next to trials that take minutes.
 - Harbor installs the harness CLI from npm or Anthropic's bootstrap script inside the sandbox at runtime. That needs network access and trusts Harbor's installer. Checking the installed version limits the damage but does not remove it. A later ADR can add pre-built harness images.
 - The harness under test is "Claude Code as Harbor launches it", not a developer's interactive setup. The report must say so. This is a limitation for questions about interactive use, and it is fine for the regression-detection use case.
@@ -50,7 +50,7 @@ The v0.1 brief rules out a new task runner. Harbor ([harbor-framework/harbor](ht
 ## Alternatives considered
 
 - **Harbor's Python API in-process.** Tighter integration, but no stable contract, and Harbor's dependency tree would share our process and lockfile.
-- **Harbor as a normal dependency in our `uv.lock`.** Simpler setup, but it pulls about 80 packages, including LiteLLM, into the canary's environment and couples our release cadence to Harbor's.
+- **Harbor as a normal dependency in our `uv.lock`.** Simpler setup, but it pulls about 80 packages, including LiteLLM, into pinbench's environment and couples our release cadence to Harbor's.
 - **Margin Eval as the runner.** It has comparable features, but it is AGPL-3.0 and has a smaller ecosystem. It could be added later as an external `Runner` without embedding it.
-- **UiPath coder_eval as the runner.** It is Apache-2.0 and has multiple harnesses, but it is young and overlaps with the canary's own scope. See the [competitive re-check](../research/2026-09-27-competitive-recheck.md).
+- **UiPath coder_eval as the runner.** It is Apache-2.0 and has multiple harnesses, but it is young and overlaps with pinbench's own scope. See the [competitive re-check](../research/2026-09-27-competitive-recheck.md).
 - **Our own runner.** Explicitly out of scope.

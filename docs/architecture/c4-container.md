@@ -1,16 +1,16 @@
 # C4 level 2: containers
 
-v0.1 ships as one Python process (the `canary` CLI) plus the separately locked Harbor tool environment. The boxes inside the canary are modules, not services. They are drawn separately because each has its own contract and its own ADR.
+v0.1 ships as one Python process (the `pinbench` CLI) plus the separately locked Harbor tool environment. The boxes inside pinbench are modules, not services. They are drawn separately because each has its own contract and its own ADR.
 
 ```mermaid
 C4Container
-    title Containers: Agent Canary (v0.1)
+    title Containers: pinbench (v0.1)
 
     Person(eng, "Platform / DevEx engineer")
     System_Ext(ci, "CI scheduler", "GitHub Actions")
-    System_Ext(suite, "Task suite repo", "Harbor tasks + canary.toml")
+    System_Ext(suite, "Task suite repo", "Harbor tasks + pinbench.toml")
 
-    System_Boundary(c, "Agent Canary") {
+    System_Boundary(c, "pinbench") {
         Container(cli, "CLI", "Python, Typer", "validate, run, compare, watch, alert, ledger, report, claims, verify, index")
         Container(orch, "Compare orchestrator", "Python", "Batch loop: run both arms, update statistics, check budget, decide to stop")
         Container(stats, "Statistics engine", "NumPy, SciPy", "Mixture e-process on discordant pairs; cluster bootstrap on cost, tokens and latency (ADR-0003)")
@@ -37,13 +37,13 @@ C4Container
     Rel(orch, bundles, "Writes and seals")
     Rel(orch, index, "Ingests")
     Rel(report, bundles, "Reads")
-    Rel(ci, trigger, "canary watch --run, on a schedule")
+    Rel(ci, trigger, "pinbench watch --run, on a schedule")
     Rel(trigger, orch, "Starts compare for a new release")
     Rel(alert, bundles, "Reads verdict")
     Rel(runner, verifier, "Scores each transcript")
     Rel(runner, pricing, "Prices each transcript")
     Rel(orch, ledger, "Reserves before each batch, settles after")
-    Rel(verifier, bundles, "Re-scores sealed transcripts (canary claims)")
+    Rel(verifier, bundles, "Re-scores sealed transcripts (pinbench claims)")
 
     UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```

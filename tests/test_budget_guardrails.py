@@ -10,14 +10,14 @@ from typing import Any
 import pytest
 from typer.testing import CliRunner
 
-from agent_canary.budget import BudgetError
-from agent_canary.cli import app
-from agent_canary.config import PinSpec, load_config
-from agent_canary.ledger import Ledger, LedgerError
-from agent_canary.models import TrialRecord, TrialStatus
-from agent_canary.orchestrate import run_compare, run_single
-from agent_canary.runners import BatchRequest, RunnerError
-from agent_canary.suite import load_suite
+from pinbench.budget import BudgetError
+from pinbench.cli import app
+from pinbench.config import PinSpec, load_config
+from pinbench.ledger import Ledger, LedgerError
+from pinbench.models import TrialRecord, TrialStatus
+from pinbench.orchestrate import run_compare, run_single
+from pinbench.runners import BatchRequest, RunnerError
+from pinbench.suite import load_suite
 from tests.conftest import record
 
 cli = CliRunner()
@@ -55,7 +55,7 @@ BATCH_WORST = 6 * 2 * 2 * CAP  # 6 tasks x 2 attempts x 2 pins
 
 @pytest.fixture
 def project(simulated_project: Path) -> Any:
-    toml = simulated_project / "canary.toml"
+    toml = simulated_project / "pinbench.toml"
     toml.write_text(toml.read_text() + CAPPED)
     yield simulated_project
     for root, _dirs, files in os.walk(simulated_project):
@@ -253,7 +253,7 @@ def test_pin_config_rejects_caps_that_would_not_hold() -> None:
 def test_a_model_missing_from_the_price_table_needs_an_explicit_reservation(
     project: Path,
 ) -> None:
-    from agent_canary.budget import pin_cap_usd
+    from pinbench.budget import pin_cap_usd
 
     loaded = load_config(project)
     unknown = PinSpec(
@@ -281,7 +281,7 @@ def test_paid_run_is_refused_without_a_limit_and_nothing_is_created(project: Pat
     with pytest.raises(BudgetError, match="no spending limit is set for the 'anthropic' pool"):
         _compare(project, runner)
     assert runner.batches == 0
-    assert not (project / ".canary" / "runs").exists()
+    assert not (project / ".pinbench" / "runs").exists()
 
 
 def test_paid_pin_without_a_cap_is_refused(project: Path) -> None:
@@ -375,7 +375,7 @@ def test_a_dead_arm_stops_the_run_after_one_batch(project: Path) -> None:
 
 def test_futility_look_stops_a_run_that_is_going_nowhere(project: Path) -> None:
     Ledger().set_limit("anthropic", 100.0)
-    toml = project / "canary.toml"
+    toml = project / "pinbench.toml"
     toml.write_text(toml.read_text().replace("[stats]", "[stats]\nfutility_after_batches = 2"))
     runner = PaidRunner(cost=0.01, candidate_status=TrialStatus.PASS)
     verdict = _compare(project, runner, max_batches=6, max_usd=100.0).verdict
@@ -387,7 +387,7 @@ def test_futility_look_stops_a_run_that_is_going_nowhere(project: Path) -> None:
 
 
 def test_futility_needs_a_one_sided_test(project: Path) -> None:
-    toml = project / "canary.toml"
+    toml = project / "pinbench.toml"
     toml.write_text(
         toml.read_text().replace(
             "[stats]", '[stats]\nfutility_after_batches = 2\nalternative = "two-sided"'
@@ -421,7 +421,7 @@ def test_compare_refuses_when_one_batch_could_pass_max_usd(project: Path) -> Non
 
 
 def test_a_batch_that_never_started_releases_its_reservation(project: Path) -> None:
-    from agent_canary.runners import RunnerNotStarted
+    from pinbench.runners import RunnerNotStarted
 
     class Unstartable(PaidRunner):
         def run_batch(self, request: BatchRequest) -> list[TrialRecord]:
@@ -444,7 +444,7 @@ def test_a_runner_can_reject_a_run_before_anything_is_reserved(project: Path) ->
     with pytest.raises(RunnerError, match="differ only"):
         _compare(project, runner, max_usd=100.0)
     assert runner.batches == 0
-    assert not (project / ".canary" / "runs").exists()
+    assert not (project / ".pinbench" / "runs").exists()
     assert Ledger().open_reservations("anthropic") == []
 
 
@@ -466,7 +466,7 @@ def test_errors_charged_at_the_cap_mark_the_spend_as_an_upper_bound(project: Pat
 
 def test_a_run_that_stops_inside_its_warm_up_still_reports_cost(project: Path) -> None:
     Ledger().set_limit("anthropic", 100.0)
-    toml = project / "canary.toml"
+    toml = project / "pinbench.toml"
     toml.write_text(toml.read_text().replace("[stats]", "[stats]\nwarmup_batches = 1"))
     verdict = _compare(project, PaidRunner(cost=0.05), max_batches=3, max_usd=100.0).verdict
     assert verdict.batches_run == 1  # flagged in the first batch
@@ -537,10 +537,10 @@ def test_ledger_commands() -> None:
 def test_a_dead_batch_exits_2_and_is_not_a_tested_release(
     project: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from agent_canary import cli as cli_module
-    from agent_canary import releases
+    from pinbench import cli as cli_module
+    from pinbench import releases
 
-    toml = project / "canary.toml"
+    toml = project / "pinbench.toml"
     toml.write_text(toml.read_text() + '\n[watch.cc]\nbaseline = "base"\n')
     monkeypatch.setattr(
         releases,
@@ -556,7 +556,7 @@ def test_a_dead_batch_exits_2_and_is_not_a_tested_release(
     )
     assert refused.exit_code == 2
     assert "more than max_usd" in refused.output
-    assert not (project / ".canary" / "watch.json").exists()
+    assert not (project / ".pinbench" / "watch.json").exists()
 
     # A dead candidate arm: exit 2, recorded as failed, not as tested.
     dead = PaidRunner(cost=None, error_pin="base-1.0.5")
@@ -566,7 +566,7 @@ def test_a_dead_batch_exits_2_and_is_not_a_tested_release(
     )
     assert result.exit_code == 2
     assert "stopped early: a batch produced no usable pairs" in result.output
-    state = json.loads((project / ".canary" / "watch.json").read_text())["cc"]
+    state = json.loads((project / ".pinbench" / "watch.json").read_text())["cc"]
     assert state.get("last_failed") == "1.0.5"
     assert "last_tested" not in state
 
@@ -587,7 +587,7 @@ def test_a_dead_batch_exits_2_and_is_not_a_tested_release(
 def test_dry_run_prints_the_worst_case_and_spends_nothing(
     project: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from agent_canary import cli as cli_module
+    from pinbench import cli as cli_module
 
     monkeypatch.setattr(cli_module, "_runner", lambda loaded, env_file=None: PaidRunner())
     Ledger().set_limit("anthropic", 20.0)
@@ -616,7 +616,7 @@ def test_dry_run_prints_the_worst_case_and_spends_nothing(
     assert "$6.96 for one batch; $13.36 for the run" in out
     assert "each batch reserves $6.96, so 2 of 5 batches fit" in out
     assert "REFUSED" not in out
-    assert not (project / ".canary" / "runs").exists()
+    assert not (project / ".pinbench" / "runs").exists()
 
     too_small = cli.invoke(
         app,
@@ -631,7 +631,7 @@ def test_dry_run_prints_the_worst_case_and_spends_nothing(
 
 
 def test_validate_warns_about_effort_on_a_model_that_ignores_it(project: Path) -> None:
-    toml = project / "canary.toml"
+    toml = project / "pinbench.toml"
     toml.write_text(
         toml.read_text()
         + '\n[pins.haiku-low]\nharness = "claude-code"\nversion = "1.0.0"\n'

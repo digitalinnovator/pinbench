@@ -7,15 +7,15 @@ from typing import Any
 
 import pytest
 
-from agent_canary.budget import BatchPlan, trial_cost
-from agent_canary.models import TrialStatus
-from agent_canary.pricing import (
+from pinbench.budget import BatchPlan, trial_cost
+from pinbench.models import TrialStatus
+from pinbench.pricing import (
     load_price_table,
     normalise_model,
     price_trajectory,
     usage_from_trajectory,
 )
-from agent_canary.stats import cost_metric
+from pinbench.stats import cost_metric
 from tests.conftest import FIXTURES, record
 
 REAL = FIXTURES / "harbor" / "claude-code-job" / "fix-pagination__Jviezym" / "agent"

@@ -5,7 +5,7 @@
 
 ## Context
 
-Every trial of a coding agent costs real tokens and minutes. The canary has to answer "is the candidate pin worse than the baseline?" with a known false-alarm rate, and stop spending as soon as the answer is clear. Four features of the data shape the design:
+Every trial of a coding agent costs real tokens and minutes. pinbench has to answer "is the candidate pin worse than the baseline?" with a known false-alarm rate, and stop spending as soon as the answer is clear. Four features of the data shape the design:
 
 1. **Outcomes are nondeterministic.** The same task, harness and model can pass one run and fail the next.
 2. **Tasks differ hugely in difficulty.** Pooling all trials into one Bernoulli rate throws away the pairing and inflates variance.
@@ -27,7 +27,7 @@ E_n = 2^(n+1) · ∫_{½}^{1} q^k (1-q)^(n-k) dq
     = 2^(n+1) · B(k+1, n-k+1) · I_{½}(n-k+1, k+1)
 ```
 
-The canary raises a regression alarm when `E_n ≥ 1/α` (default α = 0.05, so a threshold of 20). It reports the anytime-valid p-value `p = min(1, 1 / max_b E_b)`.
+pinbench raises a regression alarm when `E_n ≥ 1/α` (default α = 0.05, so a threshold of 20). It reports the anytime-valid p-value `p = min(1, 1 / max_b E_b)`.
 
 **Why this is valid under optional stopping.** For a fixed `q > ½`, consider the likelihood-ratio product over one full batch. Task `t` has baseline pass probability `a_t` and candidate pass probability `b_t`. Because the tasks run independently, the expected value of that product is
 
@@ -35,7 +35,7 @@ The canary raises a regression alarm when `E_n ≥ 1/α` (default α = 0.05, so 
 ∏_t (1 + (2q-1)(a_t - b_t))  ≤  (1 + (2q-1)·mean_t(a_t - b_t))^T  ≤  1
 ```
 
-by the AM–GM inequality, whenever `mean_t b_t ≥ mean_t a_t`. This uses the identity `P(D=1) - P(D=0) = a_t(1-b_t) - (1-a_t)b_t = a_t - b_t`. So, **sampled at batch boundaries**, the process is a non-negative supermartingale under the null "the candidate's average pass rate over the suite is not lower". Mixing over `q` preserves this property. Ville's inequality then bounds the chance of ever crossing `1/α` under the null by α, whenever the canary stops.
+by the AM–GM inequality, whenever `mean_t b_t ≥ mean_t a_t`. This uses the identity `P(D=1) - P(D=0) = a_t(1-b_t) - (1-a_t)b_t = a_t - b_t`. So, **sampled at batch boundaries**, the process is a non-negative supermartingale under the null "the candidate's average pass rate over the suite is not lower". Mixing over `q` preserves this property. Ville's inequality then bounds the chance of ever crossing `1/α` under the null by α, whenever pinbench stops.
 
 This is a real statistical requirement for the code, not only a style choice:
 
@@ -46,18 +46,18 @@ Checking in the middle of a batch would only be valid under the stronger null "n
 
 `E_n` depends only on `(n, k)`, so the state is two integers. The test needs no effect size in advance, which Wald's SPRT would.
 
-Two-sided detection ("changed in either direction") averages the two one-sided e-processes, `E = (E_less + E_greater) / 2`, which is itself an e-process. The default is one-sided (regression), because that is the alarm the canary exists to raise.
+Two-sided detection ("changed in either direction") averages the two one-sided e-processes, `E = (E_less + E_greater) / 2`, which is itself an e-process. The default is one-sided (regression), because that is the alarm pinbench exists to raise.
 
 ### Stopping rules
 
-The canary stops at the first batch boundary where any of these holds:
+pinbench stops at the first batch boundary where any of these holds:
 
 - `E ≥ 1/α`: regression detected.
 - The budget is exhausted, in dollars or batches (ADR-0004 records spend). The verdict is then "inconclusive at this budget". It is never "no regression".
 
 ### Tokens, dollars and latency: cluster bootstrap on the ratio of means
 
-For each metric (cost in USD, input tokens, output tokens, agent wall time), the canary reports `mean(candidate) / mean(baseline)` with a percentile confidence interval. The interval comes from a **cluster bootstrap over tasks**: resample task IDs with replacement, and keep all trials of a resampled task in both arms. The canary flags a cost regression when the lower bound exceeds 1.0 and the point estimate exceeds `1 + threshold` (default 10%). It uses a fixed seed, recorded in the run bundle, so reports can be reproduced exactly.
+For each metric (cost in USD, input tokens, output tokens, agent wall time), pinbench reports `mean(candidate) / mean(baseline)` with a percentile confidence interval. The interval comes from a **cluster bootstrap over tasks**: resample task IDs with replacement, and keep all trials of a resampled task in both arms. pinbench flags a cost regression when the lower bound exceeds 1.0 and the point estimate exceeds `1 + threshold` (default 10%). It uses a fixed seed, recorded in the run bundle, so reports can be reproduced exactly.
 
 ### Amendment (2026-09-27): mixture bound q_max = 0.8
 
@@ -83,7 +83,7 @@ The price is a higher floor. At least 10 discordant pairs are needed to raise an
 
 ## Consequences
 
-- The false-alarm rate is controlled even though the canary checks after every batch. This is the property that lets it stop early and save money.
+- The false-alarm rate is controlled even though pinbench checks after every batch. This is the property that lets it stop early and save money.
 - Pairing and concurrency remove task-difficulty variance and time drift. The price is always running the baseline arm too, which roughly doubles cost per batch compared with testing against stored history. A future "history mode" can test against stored baselines for cheap daily monitoring, and accept the drift risk explicitly.
 - Concordant pairs are wasted spend from the pass-rate test's point of view. Tasks the agent always passes or always fails add cost and no signal. The report shows discordance per task so users can prune suites.
 - **The bootstrap intervals are not anytime-valid.** They are computed once, at the stopping time, and are optimistic if read after every batch. The report labels them as fixed-sample intervals at stop. A confidence-sequence replacement is on the roadmap.

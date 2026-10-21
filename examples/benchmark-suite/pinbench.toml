@@ -1,0 +1,96 @@
+# Regression-injection benchmark (docs/benchmark/plan.md). DRAFT: the task selection and the
+# per-trial caps are filled in from calibration, and committed before the headline run.
+#
+#   pinbench validate -c examples/benchmark-suite
+#   pinbench compare s5-high s5-low -c examples/benchmark-suite --dry-run      # spends nothing
+#
+# Every paid run needs a ledger limit first:  pinbench ledger limit anthropic 22.50
+
+[suite]
+name = "benchmark"
+tasks_dir = "tasks"
+# The 10 tasks for the headline: the 18 chosen by the pre-screen rule (docs/benchmark/prescreen.md),
+# cut to the 10 with the largest expected drop per dollar after step 4 (docs/benchmark/plan.md).
+include = [
+  "invoice-rounding", "order-state-machine", "glob-match", "format-number", "version-range-match",
+  "dedupe-contacts", "money-split", "iso-week-report", "strip-comments", "cli-short-flags",
+]
+
+[runner]
+kind = "harbor"
+harbor_command = ["uv", "run", "--project", "../../tools/harbor", "--frozen", "harbor"]
+environment = "docker"
+n_concurrent = 4
+agent_setup_timeout_multiplier = 2.0
+
+[stats]
+alpha = 0.05
+alternative = "less"
+mixture_max = 0.8
+# Pre-registered futility look (plan, step 5): stop after batch 3 unless the candidate is behind
+# by at least 4 pairs. It can only end a run as inconclusive.
+futility_after_batches = 3
+futility_min_net_regressions = 4
+warmup_batches = 1
+
+[budget]
+max_usd = 12.0
+max_batches = 5
+attempts_per_batch = 1
+
+# --- Headline arms: Claude Code at one version on Sonnet 5, differing only in reasoning effort.
+# The same spend and turn caps on both arms, so a cap cannot act as a treatment by itself.
+[pins.s5-high]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-sonnet-5"
+options = { reasoning_effort = "high", max_budget_usd = "0.30", max_turns = 20 }
+
+[pins.s5-low]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-sonnet-5"
+options = { reasoning_effort = "low", max_budget_usd = "0.30", max_turns = 20 }
+
+# Calibration (plan, step 4): s5-high with a loose cap, so the cap does not cut off the cost
+# distribution it is meant to measure. Its trials never enter a test.
+[pins.s5-high-calibrate]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-sonnet-5"
+options = { reasoning_effort = "high", max_budget_usd = "0.40", max_turns = 20 }
+
+# --- Cheap arms on Haiku 4.5 for checks that do not depend on the model (plan, steps 1, 2, 3, 6).
+# Claude Code ignores reasoning_effort on Haiku 4.5, so no Haiku pin sets it.
+[pins.h45]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.08", max_turns = 20 }
+
+[pins.h45-terse]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.08", max_turns = 20, append_system_prompt = "Keep every response under 25 words. Do not explain your reasoning, restate the task or summarise your changes." }
+
+# Prompt caching off makes every request pay full input price, so this arm reserves more.
+[pins.h45-no-cache]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.30", max_turns = 20 }
+env = { DISABLE_PROMPT_CACHING = "1" }
+
+# --- Release watcher (plan, step 2): Haiku keeps the two-version run cheap.
+[watch.claude-code]
+baseline = "h45"
+channel = "latest"
+
+# --- Zero-cost pins: Harbor's oracle applies each task's reference solution; nop does nothing.
+# `pinbench compare oracle nop` proves every task builds, passes its reference and fails untouched.
+[pins.oracle]
+harness = "oracle"
+
+[pins.nop]
+harness = "nop"

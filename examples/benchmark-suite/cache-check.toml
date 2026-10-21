@@ -2,7 +2,7 @@
 # only difference is DISABLE_PROMPT_CACHING=1, a stand-in for the postmortem's thinking-block
 # caching bug (26 March). It should move cost and latency, not pass rate.
 #
-#   canary compare h45 h45-no-cache -c examples/benchmark-suite/cache-check.toml --dry-run
+#   pinbench compare h45 h45-no-cache -c examples/benchmark-suite/cache-check.toml --dry-run
 
 [suite]
 name = "benchmark-cache-check"

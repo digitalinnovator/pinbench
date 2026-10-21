@@ -1,6 +1,6 @@
 """The October 2026 benchmark campaign: export its evidence, then rebuild every published number.
 
-Run bundles live under each suite's `.canary/runs/` and are not committed (they hold full
+Run bundles live under each suite's `.pinbench/runs/` and are not committed (they hold full
 transcripts, tens of megabytes). This script copies the part every published number depends on,
 each bundle's `manifest.json`, `trials.jsonl`, `verdict.json` and `SHA256SUMS`, into
 `benchmarks/results/campaign-2026-10/`, and checks each copied file against its bundle's checksum.
@@ -29,7 +29,7 @@ from typing import Any
 
 from scipy.stats import beta, binom
 
-from agent_canary.verifier import RULES_VERSION, check_trial
+from pinbench.verifier import RULES_VERSION, check_trial
 
 REPO = Path(__file__).resolve().parent.parent
 EVIDENCE = REPO / "benchmarks" / "results" / "campaign-2026-10"
@@ -41,7 +41,7 @@ FILES = ("manifest.json", "trials.jsonl", "verdict.json", "SHA256SUMS")
 class Step:
     key: str
     title: str
-    suite: str  # directory holding the suite's canary.toml, relative to the repo
+    suite: str  # directory holding the suite's pinbench.toml, relative to the repo
     run_id: str
 
 
@@ -153,7 +153,7 @@ def _sha256(path: Path) -> str:
 
 def export() -> None:
     for step in STEPS:
-        bundle = REPO / step.suite / ".canary" / "runs" / step.run_id
+        bundle = REPO / step.suite / ".pinbench" / "runs" / step.run_id
         if not bundle.is_dir():
             sys.exit(f"{step.key}: bundle {bundle} not found")
         sums = dict(
@@ -280,7 +280,7 @@ def report() -> str:
         f"Claude Code {hi['version']} on `{hi['model']}`; `{manifest5['baseline']}` "
         f"(effort {hi['options']['reasoning_effort']}) against `{manifest5['candidate']}` "
         f"(effort {lo['options']['reasoning_effort']}); {len(manifest5['tasks'])} tasks, one "
-        "attempt per task per arm per batch; the canary's paired mixture e-process at "
+        "attempt per task per arm per batch; pinbench's paired mixture e-process at "
         f"α = {v5['alpha']} (threshold {1 / v5['alpha']:g}).\n"
     )
     w("| Batch | Pairs | Discordant | Regressed | Improved | E | Cumulative cost |")
@@ -516,7 +516,7 @@ def _replicated(data: dict[str, Any]) -> str:
     errors = sum(v["baseline"]["errors"] + v["candidate"]["errors"] for v in det + aa)
     w(
         f"- **Infrastructure errors:** {errors} {'trial' if errors == 1 else 'trials'} across the "
-        "seven runs, left out of the pairs as the canary always does."
+        "seven runs, left out of the pairs as pinbench always does."
     )
     w(
         "- **Caveats:** effort `none` is a much larger cut than the postmortem's change, on a "

@@ -1,5 +1,7 @@
 # Benchmark campaign log
 
+> The project was renamed from "agent canary" to **pinbench** on 2026-10-21 ([ADR-0010](../adr/0010-name-pinbench.md)). This record keeps the names used at the time: `canary` is now `pinbench`, and `canary.toml` is `pinbench.toml`.
+
 Every paid step of the [plan](plan.md), in order, with what it cost and what it showed. Spend is the canary's ledger figure (`canary ledger status`); it is reconciled against the provider console after each step.
 
 | Pool | Ledger limit |

@@ -5,7 +5,7 @@
 
 ## Context
 
-The canary schedules runs of coding-agent harnesses, stores the results, runs statistics over them and renders reports. Its neighbours in the evaluation ecosystem (Harbor, Inspect, SWE-bench, Margin Eval's analysis tooling) are Python. The statistics it needs are sequential tests and bootstrap intervals, which are standard in SciPy and NumPy.
+pinbench schedules runs of coding-agent harnesses, stores the results, runs statistics over them and renders reports. Its neighbours in the evaluation ecosystem (Harbor, Inspect, SWE-bench, Margin Eval's analysis tooling) are Python. The statistics it needs are sequential tests and bootstrap intervals, which are standard in SciPy and NumPy.
 
 Constraints from the project brief:
 
@@ -25,7 +25,7 @@ Constraints from the project brief:
 | Run index | SQLite through the stdlib `sqlite3` module (see ADR-0004 for why it is only an index) |
 | Statistics | NumPy and SciPy (see ADR-0003) |
 | Report | A static HTML file rendered with Jinja2 and no JavaScript dependencies |
-| Logging | Stdlib `logging` with a one-line JSON formatter (`CANARY_LOG_FORMAT=json`) |
+| Logging | Stdlib `logging` with a one-line JSON formatter (`PINBENCH_LOG_FORMAT=json`) |
 | Quality gates | ruff (lint and format), mypy `--strict`, pytest |
 | Build backend | hatchling |
 | CI | GitHub Actions |
