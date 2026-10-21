@@ -22,7 +22,7 @@ The v0.1 scope was fixed at the start of the project. Anything outside it is par
 | Alerts: Slack webhook and GitHub issue | Done (ADR-0008). Tested against fake transports; nothing has been sent to a real channel |
 | Verifier-lite "false success" scorer on ATIF transcripts | Done (ADR-0007), rules v3: Claude Code and Codex transcripts; 6 Codex flags hand-checked, all correct by the rule |
 | "pinbench in CI" scheduled GitHub Actions example | Written (`examples/ci/pinbench.yml`, SHA-pinned actions, persistent ledger). Not yet run on GitHub |
-| Regression-injection benchmark | Done for v0.1 ([campaign log](benchmark/campaign-log.md), [report](../benchmarks/results/campaign-2026-10.md)): Claude Code headline, caching check, and a replicated Codex detection rate (5 of 5, 0 of 2 false alarms) |
+| Regression-injection benchmark | Done for v0.1 ([campaign log](benchmark/campaign-log.md), [report](../benchmarks/results/campaign-2026-10.md)): all three postmortem changes injected. Effort: Claude Code not flagged in one run, Codex flagged in 5 of 5 (0 of 2 false alarms). Caching off: flagged on cost. Verbosity: not flagged, no measurable effect |
 
 ## Before launch
 
@@ -30,7 +30,6 @@ The v0.1 scope was fixed at the start of the project. Anything outside it is par
 - **The name is decided: `pinbench`** ([ADR-0010](adr/0010-name-pinbench.md)), despite an unrelated PinBench organisation and domain. Check the trademark register before wider promotion.
 - **Publishing the full run bundles** (about 70 MB of transcripts) as a release asset, so anyone can re-verify the committed evidence files against them. Not done: each Claude Code trial also holds harness session files with account identifiers (`agent/sessions/`), which must be left out first.
 - **Re-verify the competitive comparison** on the day of launch.
-- **The verbosity regression** (one of the postmortem's three changes) has had only a smoke trial; measuring it on Haiku 4.5 would cost about $1–2.
 
 ## Known limitations to address
 

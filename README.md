@@ -18,7 +18,7 @@ Anthropic's [2026-04-23 postmortem](https://www.anthropic.com/engineering/april-
 
 ## Headline benchmark
 
-One pre-registered campaign on pinbench's own [benchmark suite](examples/benchmark-suite/) (32 tasks; the runs below used 10 or 18 of them), October 2026, for $21.50 of API credit ($18.45 Anthropic, $3.05 OpenAI). Every number in this section is printed from committed evidence by [`benchmarks/campaign_report.py`](benchmarks/campaign_report.py) into [`campaign-2026-10.md`](benchmarks/results/campaign-2026-10.md); the [campaign log](docs/benchmark/campaign-log.md) has each step and its gates. Run records name commits by their IDs from before a 2026-10-21 cleanup of the history; [commit-map.md](docs/benchmark/commit-map.md) maps them to the current ones.
+One pre-registered campaign on pinbench's own [benchmark suite](examples/benchmark-suite/) (32 tasks; the runs below used 10 or 18 of them), October 2026, for $22.80 of API credit ($19.75 Anthropic, $3.05 OpenAI). Every number in this section is printed from committed evidence by [`benchmarks/campaign_report.py`](benchmarks/campaign_report.py) into [`campaign-2026-10.md`](benchmarks/results/campaign-2026-10.md); the [campaign log](docs/benchmark/campaign-log.md) has each step and its gates. Run records name commits by their IDs from before a 2026-10-21 cleanup of the history; [commit-map.md](docs/benchmark/commit-map.md) maps them to the current ones.
 
 | Injected regression (postmortem analogue) | Harness and model | Result | Trials | Cost |
 |---|---|---|---|---|
@@ -27,13 +27,14 @@ One pre-registered campaign on pinbench's own [benchmark suite](examples/benchma
 | Prompt caching off (thinking-block caching bug, 26 March) | Claude Code 2.1.283, Haiku 4.5, 6 tasks | **Cost ×2.63, flagged** (95% interval 1.75–4.10) after one batch | 12 | $1.75 |
 | Reasoning effort high → none, replicated 5 times | Codex 0.163.0, `gpt-6-luna`, 18 tasks | Pass rate 98% → 59%. **Flagged in 5 of 5 runs**, after a median of 72 trials and $0.29 | 324 | $1.32 |
 | Identical arms (no regression), 2 runs | Codex 0.163.0, `gpt-6-luna`, 18 tasks | **Flagged in 0 of 2 runs**; both stopped at the futility look | 216 | $1.09 |
-| Verbosity instruction (system-prompt change, 16 April) | Claude Code 2.1.283, Haiku 4.5 | **Not measured.** One smoke trial shows the appended instruction reaches the harness | 1 | $0.053 |
+| Verbosity instruction (system-prompt change, 16 April) | Claude Code 2.1.283, Haiku 4.5, 3 tasks | Pass rate 24/24 → 23/24. **Not flagged** (E = 1.3). Output tokens ×1.15, cost ×1.04; both intervals include 1 | 48 | $1.30 |
 
 Read it this way:
 
 - **The cost regression is caught cheaply. The pass-rate regression, at this size, is not.** An 18-point drop on 10 tasks took the sequential test to E = 11.3 after 6 batches. Flagging a drop this size needs more batches or a larger suite than this budget allowed. The price of being allowed to look after every batch is needing more evidence than a test that looks once.
 - **The Claude Code result is one run, not a detection rate.** It shows what pinbench concluded on one budget, not how often it would. Its sixth batch was a planned leftover-budget step, but it ran before the caching check rather than after it as the plan ordered; the result is not flagged at 5 batches or at 6.
 - **The Codex replication is a detection rate, for a much larger drop.** Codex trials cost about $0.004, so the same protocol ran five times: every run flagged a 39-point drop within one or two batches, for under $0.31 each. Five of five still allows a true rate as low as 48% (95% interval), and the two identical-arm runs say little about false alarms; the test's guarantee (at most 5%) does.
+- **The verbosity stand-in did not reproduce a regression.** Appending "keep every response under 25 words" changed neither the pass rate nor the output measurably on Haiku 4.5, probably because most of a coding agent's output is code and tool calls, not prose. The real 16 April change may have acted differently; this is one stand-in on 3 easy tasks.
 - **Lower effort claimed "tests pass" more often and was wrong more often, on both harnesses.** Sonnet 5 at low effort claimed it in 55 of 60 trials and then failed the hidden tests in 29; at high effort, 33 claims and 9 such failures. Codex at effort none claimed it in 146 of 162 trials, with 61 hidden-test failures; at high effort, 82 claims in 270 trials and 2 failures. Almost every claim was backed by a passing test run after the last edit: the agents' own checks were weaker than the hidden tests.
 - **The verifier flagged 6 Codex claims in the replicated runs**, 3 at each effort level: each time the agent edited after its last test run and then said the tests passed. A hand check of all six is in the [campaign log](docs/benchmark/campaign-log.md).
 

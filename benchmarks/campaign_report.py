@@ -130,6 +130,12 @@ STEPS = [
         "examples/benchmark-suite-codex",
         "20261021T020615Z-run-02a846",
     ),
+    Step(
+        "V1-verbosity",
+        "Verbosity check: appended instruction on Haiku 4.5",
+        "examples/demo-suite",
+        "20261021T125246Z-compare-64e6e7",
+    ),
     *(
         Step(f"R-{label}", title, "examples/benchmark-suite-codex", run_id)
         for label, title, run_id in (
@@ -348,6 +354,8 @@ def report() -> str:
         )
     w("")
 
+    if "V1-verbosity" in data:
+        w(_verbosity(data))
     # -- harness checks -----------------------------------------------------------------------
     w("## Harness checks\n")
     w("| Run | Pin | Status | Version proven | Harness stop | Cost |")
@@ -534,6 +542,40 @@ def _replicated(data: dict[str, Any]) -> str:
         "- **Caveats:** effort `none` is a much larger cut than the postmortem's change, on a "
         "different model; five runs give only a rough detection rate."
     )
+    w("")
+    return "\n".join(out)
+
+
+def _verbosity(data: dict[str, Any]) -> str:
+    """The verbosity check: the postmortem's third change (docs/benchmark/plan.md)."""
+    out: list[str] = []
+    w = out.append
+    _s, manifest, trials, v = data["V1-verbosity"]
+    assert v is not None
+    pins = {p["name"]: p["spec"] for p in manifest["pins"]}
+    base = pins[manifest["baseline"]]
+    w("## Verbosity instruction: the third postmortem change\n")
+    w(
+        f"Claude Code {base['version']} on `{base['model']}`, `{manifest['baseline']}` against "
+        f"`{manifest['candidate']}` (an appended instruction to keep every response under 25 "
+        f"words), {len(manifest['tasks'])} tasks, one attempt per task per arm per batch.\n"
+    )
+    b, c = v["baseline"], v["candidate"]
+    w(
+        f"- **{v['decision']}** after {len(v['history'])} batches (stopped by {v['stop_reason']}): "
+        f"pass rate {b['passes']}/{b['n']} against {c['passes']}/{c['n']}; {v['n_regress']} "
+        f"regressed and {v['n_improve']} improved pairs; E = {v['e_value']:.2f}; "
+        f"{len(trials)} trials, {_money(sum(_cost(t) for t in trials))}."
+    )
+    w(
+        "- Terse relative to baseline (cluster bootstrap over only "
+        f"{len(manifest['tasks'])} tasks, so the intervals are far too narrow; warm-up batch "
+        "excluded):\n"
+    )
+    w("| Metric | Ratio | 95% interval |")
+    w("|---|---|---|")
+    for m in v["metrics"]:
+        w(f"| {m['metric']} | ×{m['ratio']:.2f} | {m['ci_low']:.2f}–{m['ci_high']:.2f} |")
     w("")
     return "\n".join(out)
 

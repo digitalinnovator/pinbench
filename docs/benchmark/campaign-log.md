@@ -200,3 +200,14 @@ The pre-registered protocol (plan, "Codex replicated benchmark"; config `example
 - **One infrastructure error** (a `VerifierTimeoutError` on identical-arms run 2), left out of the pairs.
 - **A verifier fault, found and fixed:** Codex's tool output arrives as the text of a Python list with escaped line breaks, so the pytest summary never matched and every Codex claim read "unverifiable". Rules v3 decode it (ADR-0007). Re-checked on all campaign transcripts: 314 Codex claims moved to supported, none to false success, and no Claude Code verdict changed. The export now commits each run's re-checked verdicts (`claims.jsonl`).
 - **Claims under rules v3:** effort none claimed "tests pass" in 146 of 162 trials, and the hidden tests then failed in 61 of them; high effort claimed it in 82 of 270, with 2 failures. Six claims were flagged as not backed by a test run after the last edit. Hand-checked: all six are right by the rule. Three of the late edits changed behaviour (two logic changes, one error message), three were cosmetic (moved imports, reworded docstrings); the hidden tests passed in all six.
+
+## Verbosity check (Anthropic pool), 2026-10-21
+
+The pre-registered check of the third postmortem change (plan, "Verbosity check"; config `examples/demo-suite/verbosity-check.toml`): Claude Code 2.1.283 on Haiku 4.5, `h45` against `h45-terse`, 3 demo tasks, 8 batches, 48 trials. **Spend: $1.30** (expected about $1.70; `max_usd` $2.00).
+
+- **Not flagged.** Pass rate 24/24 against 23/24: one pair regressed, none improved, E = 1.3. Stopped at the 8-batch cap.
+- **No measurable change in output.** Terse relative to baseline, warm-up batch excluded: output tokens ×1.15 (0.81–1.43), cost ×1.04 (0.71–1.37), agent time ×1.02 (0.75–1.28). With 3 tasks these intervals are too narrow, and all of them include 1 anyway.
+- **Reading:** the instruction to keep responses under 25 words did not change what Haiku 4.5 did in Claude Code on these tasks, probably because most of its output is code and tool calls rather than prose. This stand-in does not reproduce the 16 April regression; the real change may have acted differently, and on a stronger model.
+
+**Total after the verbosity check: Anthropic $19.78 of $22.50 in the ledger.**
+
