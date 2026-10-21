@@ -125,6 +125,17 @@ The selection rule and the per-task pre-screen results are fixed in [prescreen.m
 - **Optional, the owner's decision after X1:** a Codex effort comparison on 12 tasks, about $1.50–5.00. It is offered only if X1 shows a dearest trial under $0.03 and the verifier reads the transcripts.
 - OpenAI prices were read from the official pricing page on 2026-09-30 and confirmed unchanged on 2026-10-18. Re-verify them before any spend.
 
+## Codex replicated benchmark (OpenAI pool), fixed 2026-10-21 before its first run
+
+One Claude Code run cannot say how often the canary detects a regression. Codex trials cost about $0.005, so the OpenAI pool can buy repeated runs. The effort cut is high against `none`: the Codex headroom check (step C1) showed high against low makes almost no difference on these tasks (98% against 94%), and a one-trial probe at `none` passed 11 of 18 against 18 of 18 at high.
+
+- **Config:** `examples/benchmark-suite-codex/replicate.toml`: Codex 0.163.0 on `gpt-6-luna`, the same 18 tasks as the Claude Code pre-screen selection (chosen for Sonnet 5, not for Codex), one attempt per task per arm per batch, at most 6 batches, futility look after batch 3 (net 4), α = 0.05, mixture bound 0.8, warm-up batch excluded from cost metrics.
+- **Detection:** 5 independent runs of `codex-high` against `codex-none`. Reported: how many of the 5 flag a regression; for each, the batch, trials and dollars at which it flagged; the pass rates.
+- **False alarms:** 2 runs of `codex-high` against `codex-high-twin` (identical but for an inert environment marker). Reported: how many flag anything, and whether any cost or latency metric is flagged.
+- **No other runs are counted,** and none of these is dropped or repeated. The probe and step C1 trials are not reused.
+- **Caveats fixed in advance:** effort `none` is a far bigger cut than the postmortem's high-to-medium; `gpt-6-luna` is not the model the incident was on; 5 runs give a rough rate (with 5 of 5 the 95% interval still reaches down to 48%); 2 A/A runs say little about a 5% false-alarm rate, which comes from the e-process guarantee.
+- **Budget:** expected about $3.70, worst case about $6.50, within the $8.35 left under the OpenAI ledger limit.
+
 ## What the results can support
 
 - "One pre-registered run on Claude Code 2.1.283 with Sonnet 5 and 18 tasks: lowering reasoning effort from high to low was (or was not) flagged after T trials and $X."
