@@ -14,7 +14,7 @@ Anthropic's [2026-04-23 postmortem](https://www.anthropic.com/engineering/april-
 
 ## Headline benchmark
 
-One pre-registered campaign on pinbench's own [18-task suite](examples/benchmark-suite/), October 2026, on a fixed budget of about $25 of API credit (about $18.45 Anthropic, $3.05 OpenAI spent). Every number below is rebuilt from committed evidence by [`benchmarks/campaign_report.py`](benchmarks/campaign_report.py) into [`campaign-2026-10.md`](benchmarks/results/campaign-2026-10.md); the [campaign log](docs/benchmark/campaign-log.md) has each step and its gates. Run records name commits by their IDs from before a 2026-10-21 edit of the commit messages; [commit-map.md](docs/benchmark/commit-map.md) maps them to the current ones.
+One pre-registered campaign on pinbench's own [18-task suite](examples/benchmark-suite/), October 2026, on a fixed budget of about $25 of API credit (about $18.45 Anthropic, $3.05 OpenAI spent). Every number below is rebuilt from committed evidence by [`benchmarks/campaign_report.py`](benchmarks/campaign_report.py) into [`campaign-2026-10.md`](benchmarks/results/campaign-2026-10.md); the [campaign log](docs/benchmark/campaign-log.md) has each step and its gates. Run records name commits by their IDs from before a 2026-10-21 cleanup of the history; [commit-map.md](docs/benchmark/commit-map.md) maps them to the current ones.
 
 | Injected regression (postmortem analogue) | Harness and model | Result | Trials | Cost |
 |---|---|---|---|---|
