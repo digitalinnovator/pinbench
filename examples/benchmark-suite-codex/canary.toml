@@ -59,3 +59,13 @@ harness = "oracle"
 
 [pins.nop]
 harness = "nop"
+
+# Probe (2026-10-21): the lowest effort setting Codex accepts, to see whether it opens a gap
+# large enough to measure a detection rate.
+[pins.codex-none]
+harness = "codex"
+version = "0.163.0"
+model = "openai/gpt-6-luna"
+options = { reasoning_effort = "none", web_search = "disabled", config = { service_tier = "default" } }
+timeout_sec = 300
+reserve_usd = 0.05

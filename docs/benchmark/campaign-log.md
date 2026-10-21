@@ -167,3 +167,11 @@ Codex 0.163.0 on `gpt-6-luna`, reasoning effort high against low, all 32 candida
 - **Gate:** low effort shows no clear drop, so the planned replicated Codex comparison (C2) is not run on this suite. Nothing more is spent on it.
 
 **Total after step C1: OpenAI $0.59 of $9.00.**
+
+## Probe: Codex at reasoning effort "none", 2026-10-21
+
+`canary run codex-none -c examples/benchmark-suite-codex`: the lowest effort Codex accepts, once on each of the 18 benchmark tasks. **Spend: $0.055.**
+
+- **11 of 18 passed (61%)**, against 18 of 18 at high effort in step C0: a gap of about 39 points, large enough to measure a detection rate cheaply.
+- **The 300-second agent timeout was not enforced.** Two trials ran 23 and 39 minutes (`dependency-order`, `env-file-parser`). Harbor received `override_timeout_sec = 300` (it is in the trial config) and its agent phase waits with `asyncio.wait_for(…, timeout=300)`, yet no `AgentTimeoutError` was raised. In the 39-minute trial, 38 minutes passed between two model requests with no tool running: the model call itself stalled (likely Codex retrying a stalled stream on this machine's slow link). Cost stayed small ($0.007), because waiting spends no tokens.
+- **Consequence for the guardrails:** for a harness with no dollar cap, the agent timeout was meant to be the per-trial bound (ADR-0009). In Harbor 0.23.0 with Codex it is not reliable. The remaining bounds are the canary's batch watchdog (`[runner] batch_timeout_sec`, 4 hours by default), which kills the Harbor process, and the ledger, which keeps a killed batch reserved at its worst case. The roadmap records it; the root cause in Harbor is not established.
