@@ -14,6 +14,7 @@ htmlcov/
 
 # pinbench state: run bundles, index and reports stay local
 .pinbench/
+.canary/
 jobs/
 
 # Secrets

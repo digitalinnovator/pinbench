@@ -23,7 +23,7 @@ Run records cannot be edited (their checksums would break), so each run's `manif
 | `28738c073f2b` | `6c0077428817` | `e3766714a9f0` | 2026-10-21 09:35:53 | Competitive re-check: agentassay, and the PyPI agent-canary name is taken | — |
 | `aa1fededd64f` | `df45b56b9b30` | `4a6906525e26` | 2026-10-21 09:53:03 | Rename the project to pinbench (ADR-0010) | — |
 
-**The replicated Codex benchmark.** Its protocol was committed at 03:00:46 UTC (old ID `52438713c7f0`); the first of its runs started at 03:01:01 UTC. Two runs record that commit. The other five started after a documentation commit made while they ran (`e5f4e51c5444`), which changed only `README.md`, `docs/roadmap.md` and a research note: code, configs and tasks are identical at both.
+**The replicated Codex benchmark.** Its protocol was committed at 03:00:46 UTC (old ID `52438713c7f0`); the first of its runs started at 03:01:01 UTC. Two runs record that commit. The other five started after two documentation commits made while they ran (`31249532bf59`, `e5f4e51c5444`). Between `52438713c7f0` and `e5f4e51c5444` only `README.md`, `docs/roadmap.md` and a research note changed: code, configs and tasks are identical at both.
 
 Runs marked "uncommitted changes" ran with edits not yet committed (`suite_dirty` in the manifest); for those the commit is the nearest committed state, not an exact one.
 
