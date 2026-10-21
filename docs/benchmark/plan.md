@@ -138,6 +138,17 @@ One Claude Code run cannot say how often the canary detects a regression. Codex 
 - **Caveats fixed in advance:** effort `none` is a far bigger cut than the postmortem's high-to-medium; `gpt-6-luna` is not the model the incident was on; 5 runs give a rough rate (with 5 of 5 the 95% interval still reaches down to 48%); 2 A/A runs say little about a 5% false-alarm rate, which comes from the e-process guarantee.
 - **Budget:** expected about $3.70, worst case about $6.50, within the $8.35 left under the OpenAI ledger limit.
 
+## Verbosity check (Anthropic pool), fixed 2026-10-21 before its run
+
+The third postmortem change, a system-prompt instruction to be less verbose (16 April), had only a smoke trial in step 1. This check measures it.
+
+- **Config:** `examples/demo-suite/verbosity-check.toml`: Claude Code 2.1.283 on Haiku 4.5, `h45` against `h45-terse`, which appends "Keep every response under 25 words. Do not explain your reasoning, restate the task or summarise your changes." Same per-trial cap on both arms ($0.15, about twice the dearest Haiku trial on these tasks so far), 20 turns.
+- **Tasks:** the demo suite's 3 tasks. Haiku 4.5 passed all 12 earlier attempts at them, so a quality loss has room to show; it failed almost every benchmark-suite task, which would hide one.
+- **Run:** one attempt per task per arm per batch, at most 8 batches (24 pairs), α = 0.05, mixture bound 0.8, warm-up batch excluded from the cost metrics. One run; none is repeated or dropped.
+- **Reported:** the pass rates and the test's decision; output tokens, cost and agent time, terse relative to baseline, with intervals.
+- **Caveats fixed in advance:** 3 tasks make the cost and token intervals far too narrow (they are clustered by task); 24 pairs can flag a pass-rate drop only if at least 10 of them disagree; Haiku 4.5 is not the model of the incident.
+- **Budget:** expected about $1.70; `max_usd` $2.00; each batch reserves its worst case ($1.20) in the ledger.
+
 ## What the results can support
 
 - "One pre-registered run on Claude Code 2.1.283 with Sonnet 5 and 18 tasks: lowering reasoning effort from high to low was (or was not) flagged after T trials and $X."

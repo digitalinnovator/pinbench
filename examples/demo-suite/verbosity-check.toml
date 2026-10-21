@@ -1,0 +1,41 @@
+# The verbosity check (docs/benchmark/plan.md, "Verbosity check"), fixed on 2026-10-21 before its run.
+# A stand-in for the postmortem's verbosity system-prompt change (16 April): the same harness, model
+# and tasks, with one instruction appended to the system prompt. Haiku 4.5 passes these three tasks
+# almost always, so a quality loss has room to show; it fails the benchmark-suite tasks almost always.
+#
+#   pinbench compare h45 h45-terse -c examples/demo-suite/verbosity-check.toml --dry-run
+
+[suite]
+name = "verbosity-check"
+tasks_dir = "tasks"
+
+[runner]
+kind = "harbor"
+harbor_command = ["uv", "run", "--project", "../../tools/harbor", "--frozen", "harbor"]
+environment = "docker"
+n_concurrent = 4
+agent_setup_timeout_multiplier = 2.0
+
+[stats]
+alpha = 0.05
+alternative = "less"
+mixture_max = 0.8
+warmup_batches = 1
+
+[budget]
+max_usd = 2.0
+max_batches = 8
+attempts_per_batch = 1
+
+# The same cap on both arms, about twice the dearest Haiku trial on these tasks so far ($0.073).
+[pins.h45]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.15", max_turns = 20 }
+
+[pins.h45-terse]
+harness = "claude-code"
+version = "2.1.283"
+model = "anthropic/claude-haiku-4-5"
+options = { max_budget_usd = "0.15", max_turns = 20, append_system_prompt = "Keep every response under 25 words. Do not explain your reasoning, restate the task or summarise your changes." }
