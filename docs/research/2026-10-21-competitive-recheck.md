@@ -152,3 +152,8 @@ Closest overlaps first. Items marked "missed" existed before 2026-09-27 but were
    - **Independence**: Anthropic (plugin eval, claude-api skill) and OpenAI (Promptfoo) each now ship eval tooling. The canary does not belong to a vendor whose harness it measures.
    - **The harness efficiency index**: frame it as a time series with versions attributed, not as a snapshot. Artificial Analysis, HarnessTax and FrontierHarness already publish snapshots. Artificial Analysis pools several harness versions into one row in 10 of 42 rows, and shows "Harness Comparison: Coming soon".
 5. **Name collision is now concrete.** The runcanary.ai CLI installs a binary named `canary`, the same command as this project's `[project.scripts] canary`. Decide on a rename or record the choice in an ADR before launch.
+   - **Added after the sweep (checked 2026-10-21):** the PyPI name `agent-canary` is taken, by an unrelated scanner for unguarded tool calls (`Diplomat-agents/agent-canary`, 0.1.0). So the distribution name has to change whatever the command is called.
+
+## Added after the sweep
+
+- **[qualixar/agentassay](https://github.com/qualixar/agentassay)** (6 stars, AGPL-3.0, read 2026-10-21). Statistical regression testing for agents built on frameworks (LangGraph, CrewAI and others): behavioural fingerprints, a calibration run that sets the number of trials, and offline analysis of production traces. Its README mentions SPRT once. It has no coding-agent harness adapters, no version pinning, no triggers and no alerts. It is not a close competitor, but it shows "statistical guarantees at lower token cost" is a claim others make too.
